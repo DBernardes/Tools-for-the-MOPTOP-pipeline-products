@@ -10,12 +10,13 @@ from tools import track_obj_over_images
 
 
 star_name = 'BD+32 3739'
-src_path = os.path.join('..', 'Low polarized stars', star_name, star_name, 'selected_files', 'cam3')
+min, max =  59768, 59825
+src_path = os.path.join('..', '..', 'Low polarized stars', star_name, star_name, 'selected_files', f'{min}-{max}', 'cam3')
 
 sep = 0
 for filter in ['V', 'R', 'I']:
     new_path = os.path.join(src_path, f'{filter} Filter')
-    xcoord, ycoord = track_obj_over_images(new_path)
+    xcoord, ycoord, _ = track_obj_over_images(new_path)
     plt.plot(xcoord, ycoord-sep, 'o-', alpha = 0.2, label=f'{filter}')
     sep+=150
 
