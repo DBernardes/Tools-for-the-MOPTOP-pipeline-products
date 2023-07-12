@@ -18,9 +18,12 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from stat import S_ISREG, ST_CTIME, ST_MODE
 import glob
+from numpy import ndarray
+from sys import exit
 
 
-stars_polarization = {'GD319':0, 'HD14069':0.111, 'BD+32 3739':0, 'HD212311':0}
+low_palarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD212311':0.028, 'BD+28 4211':0.063, 'G191B2B':0.090, 'BD+33 2642':0.145}
+#https://www.not.iac.es/instruments/turpol/std/zpstd.html
 
 def manipulate_csv_file(path):
     """Manipulate the raw_data csv file
@@ -34,7 +37,7 @@ def manipulate_csv_file(path):
     df = pd.read_csv(path)
     df = df[df['q_avg'].notna()]
     for column_name in df.columns.values:
-        if column_name not in ['q_avg', 'q_err','u_avg','u_err', 'date', 'mjd', 'wave', 's1_src_cam1', 's1_src_cam1_err', 's1_src_cam2', 's1_src_cam2_err']:
+        if column_name not in ['q_avg', 'q_err','u_avg','u_err', 'date', 'mjd', 'wave', 's1_src_cam1', 's1_src_cam1_err', 's1_src_cam2', 's1_src_cam2_err', 'time']:
             df = df.drop(column_name, axis=1)
     df = df.sort_values(by=['wave', 'mjd'])
     base_path = path.split('/')[:-1]
@@ -87,16 +90,20 @@ def track_obj_over_images(path:str, tag:str='.fits'):
         path (str): directory of the images
     """
     files = _sort_files(path, tag)
-    xcoord, ycoord, mjd = [], [], []
+    xcoord, ycoord, mjds = ndarray, ndarray, ndarray
     for file in files:
-        hdr = fits.getheader(os.path.join(path, file))
-        wcs = WCS(hdr)  
-        coord = SkyCoord(f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}', frame='fk5', unit=(u.hourangle, u.deg))
-        x, y = wcs.world_to_pixel(coord)
+        x, y, mjd = get_obj_coords(path, file)
         xcoord.append(x)
         ycoord.append(y)
-        mjd.append(hdr['MJD'])
-    return np.asarray(xcoord), np.asarray(ycoord), np.asarray(mjd)
+        mjds.append(mjd)
+    return xcoord, ycoord, mjds
+
+def get_obj_coords(path:str, file:str):
+    hdr = fits.getheader(os.path.join(path, file))
+    wcs = WCS(hdr)  
+    coord = SkyCoord(f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}', frame='fk5', unit=(u.hourangle, u.deg))
+    x, y = wcs.world_to_pixel(coord)
+    return x, y, hdr['MJD']
 
 def select_images_keyword_interval(path: str, dest_path: str, keyword:str, min:float = -np.infty, max:float = np.infty, tag:str='.fits')-> None:
     """Select those images in which the keyword is inside the min and max values range
@@ -168,7 +175,6 @@ def calculate_maximum_images(path, tag:str='.fits'):
         _max.append(tmp)
     return np.asarray(_max)
 
-
 def _sort_files(path:str, tag):
     files = [f for f in os.listdir(path) if tag in f]
     mjd = []
@@ -178,4 +184,26 @@ def _sort_files(path:str, tag):
     
     return [x for _, x in sorted(zip(mjd, files))]
 
-    
+def _find_img_closest_value(path:str, files:list, keyword:str, value):
+    mjds = []
+    for file in files:
+        file = os.path.join(path, file)
+        mjd = fits.getheader(file)[keyword]
+        mjds.append(mjd)
+
+    index = np.argmin(np.abs(np.array(mjds)-value))
+    return files[index]
+
+def get_coords_in_series(path:str, dates:list):
+    xcoord, ycoord, header_dates = np.array([]), np.array([]), []
+    files = os.listdir(path)
+    for file in files:
+        hdr = fits.getheader(os.path.join(path, file))
+        header_dates.append(hdr['date'])
+
+    for date in dates:
+        indexes = np.where(np.array(header_dates) == date)[0]
+        x, y, _ = get_obj_coords(path, files[indexes[-1]])
+        xcoord = np.append(xcoord, x)
+        ycoord = np.append(ycoord, y)
+    return xcoord, ycoord

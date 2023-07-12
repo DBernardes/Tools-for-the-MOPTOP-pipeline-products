@@ -13,9 +13,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-star_name = 'BD+32 3739'
+star_name = 'HD14069'
 
-base_path = os.path.join('..', 'Low polarized stars', star_name, 'reduced', star_name )
+base_path = os.path.join('..', '..', 'Low polarized stars', star_name, 'reduced', star_name )
 csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
 pol_dict = calculate_polarization(csv_file_name)
 
