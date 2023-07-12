@@ -1,0 +1,30 @@
+Script started on Wed Jul 12 15:44:48 2023
+[1m[7m%[27m[1m[0m                                                                                                                                                                                                                                [0m[27m[24m[Jdenis@Deniss-iMac tools for pipeline products % [K[?2004hccd scripts[1m/[0m[0m [?2004l
+[1m[7m%[27m[1m[0m                                                                                                                                                                                                                                [0m[27m[24m[Jdenis@Deniss-iMac scripts % [K[?2004hppython3 plot_qu_x_flux_and_coords.py[1m [0m[0m [?2004l
+Traceback (most recent call last):
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/plot_qu_x_flux_and_coords.py", line 72, in <module>
+    xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/tools.py", line 204, in get_coords_in_series
+    for date , mjd in zip(dates, mjd):
+                          ^^^^^
+UnboundLocalError: cannot access local variable 'mjd' where it is not associated with a value
+[1m[7m%[27m[1m[0m                                                                                                                                                                                                                                [0m[27m[24m[Jdenis@Deniss-iMac scripts % [K[?2004hpython3 plot_qu_x_flux_and_coords.py[?2004l
+Traceback (most recent call last):
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/plot_qu_x_flux_and_coords.py", line 72, in <module>
+    xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/tools.py", line 206, in get_coords_in_series
+    file = _find_img_closest_value(path, files[indexes], 'MJD', mjd)
+                                         ~~~~~^^^^^^^^^
+TypeError: only integer scalar arrays can be converted to a scalar index
+[1m[7m%[27m[1m[0m                                                                                                                                                                                                                                [0m[27m[24m[Jdenis@Deniss-iMac scripts % [K[?2004hpython3 plot_qu_x_flux_and_coords.py[?2004l
+Traceback (most recent call last):
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/plot_qu_x_flux_and_coords.py", line 72, in <module>
+    xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/denis/Desktop/tools for pipeline products/scripts/tools.py", line 206, in get_coords_in_series
+    file = _find_img_closest_value(path, files[list(indexes)], 'MJD', mjd)
+                                         ~~~~~^^^^^^^^^^^^^^^
+TypeError: list indices must be integers or slices, not list
+[1m[7m%[27m[1m[0m                                                                                                                                                                                                                                [0m[27m[24m[Jdenis@Deniss-iMac scripts % [K[?2004h

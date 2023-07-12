@@ -194,15 +194,17 @@ def _find_img_closest_value(path:str, files:list, keyword:str, value):
     index = np.argmin(np.abs(np.array(mjds)-value))
     return files[index]
 
-def get_coords_in_series(path:str, dates:list):
+def get_coords_in_series(path:str, dates:list, mjds:list):
     xcoord, ycoord, header_dates = np.array([]), np.array([]), []
     files = os.listdir(path)
     for file in files:
         hdr = fits.getheader(os.path.join(path, file))
         header_dates.append(hdr['date'])
 
-    for date in dates:
+    for date , mjd in zip(dates, mjds):
         indexes = np.where(np.array(header_dates) == date)[0]
+        new_files = [files[idx] for idx in indexes]
+        file = _find_img_closest_value(path, new_files, 'MJD', mjd)
         x, y, _ = get_obj_coords(path, files[indexes[-1]])
         xcoord = np.append(xcoord, x)
         ycoord = np.append(ycoord, y)
