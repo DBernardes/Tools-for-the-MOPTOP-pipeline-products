@@ -8,7 +8,7 @@ __copyright__   = "Copyright 2023, Liverpool John Moores University"
 
 
 
-from tools import sort_qu_per_filter, stars_polarization
+from tools import sort_qu_per_filter, low_polarized_stars
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,7 +29,7 @@ for stokes_param in ['q', 'u']:
             ax.set_title(f'Filter {filter}')
         colors = ['b', 'r', 'g', 'k', 'm', 'c', 'y']
         sep = 0
-        for key in stars_polarization.keys():
+        for key in low_polarized_stars.keys():
             color = colors.pop(0)
             base_path = os.path.join('..', '..', 'Low polarized stars', key, 'reduced', key )
             csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
