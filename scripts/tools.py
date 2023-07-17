@@ -23,6 +23,7 @@ from sys import exit
 
 
 low_polarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD212311':0.028, 'BD+28 4211':0.063, 'G191B2B':0.090, 'BD+33 2642':0.145}
+high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICgy12':0, 'aaa':0}
 #https://www.not.iac.es/instruments/turpol/std/zpstd.html
 
 def manipulate_csv_file(path):
