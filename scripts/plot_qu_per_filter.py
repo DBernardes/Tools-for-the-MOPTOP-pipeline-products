@@ -16,7 +16,7 @@ import pandas as pd
 from sys import exit
 
 
-fig, axs = plt.subplots(2, 5, figsize=(18, 10))
+fig, axs = plt.subplots(2, 5, figsize=(18, 10), sharex=True, sharey='row')
 for ax in axs[1]: 
     ax.set_xlabel('Time (MJD)')
 
@@ -31,7 +31,7 @@ for stokes_param in ['q', 'u']:
         sep = 0
         for key in high_polarized_stars.keys():
             color = colors.pop(0)
-            base_path = os.path.join('..', '..', 'High polarized stars', key, 'reduced', key )
+            base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', key, 'reduced', key )
             csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
             qu_dict = sort_qu_per_filter(csv_file_name)
             tmp = np.asarray(qu_dict[filter][stokes_param]) - sep

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-min, max =  59775, 59938
+min, max =  59681,59707
 star_name = 'BD+32 3739'
 camera = 4
 alpha = 0.7
@@ -24,8 +24,8 @@ axs[2,2].set_xlabel('Y axis')
 
 
 def plot_graph(ax, x, q, u, res_q, res_u, filter, tmp):
-    ax.plot(x, q, 'o-', label=f'q', alpha=alpha)
-    ax.plot(x, u, 'o-', label=f'u+{tmp:.2f}', alpha=alpha)
+    ax.plot(x, q, 'o', label=f'q', alpha=alpha)
+    ax.plot(x, u, 'o', label=f'u+{tmp:.2f}', alpha=alpha)
     ax.annotate(f'coef_q={res_q.statistic:.2f}, pval_q={res_q.pvalue:.2f}\ncoef_u={res_u.statistic:.2f}, pval_u={res_u.pvalue:.2f}',
             xy=(.05, .95), xycoords='axes fraction',
             ha='left', va='top',
@@ -44,7 +44,7 @@ def calc_plot_parameters(df, x_str):
     res_u = stats.spearmanr(x, u)
     return x, q, u, res_q, res_u
 
-for idx, filter in enumerate(['V', 'R', 'I']):
+for idx, filter in enumerate(['V','R', 'I']):
     print(f'processing the images of filter {filter}...')
 
     new_path  = os.path.join(base_path, 'reduced', star_name, 'manipulated_data.csv')

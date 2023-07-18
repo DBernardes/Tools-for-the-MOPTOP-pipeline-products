@@ -14,18 +14,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sys import exit
+from astropy.stats import sigma_clip
 
-rows, columns = 1,2
-fig, axs = plt.subplots(rows, columns, figsize=(20, 4))
+rows, columns = 2, 3
+fig, axs = plt.subplots(rows, columns, figsize=(20, 4), sharex='col', sharey='row')
+for idxy in range(rows):
+    axs[idxy,0].set_ylabel('u')
+    for idxx in range(columns):
+        ax = axs[idxy, idxx]
+        star = list(low_polarized_stars.keys())[idxx+columns*idxy]
+        colors = ['b', 'r', 'g', 'k', 'm']
+        base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star, 'reduced', star )
+        csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
+        qu_dict = sort_qu_per_filter(csv_file_name)
+        for idx, filter in enumerate(['B', 'V', 'R', 'I', 'L']):
+            color = colors.pop(0)
+            q = qu_dict[filter]['q']
+            u = qu_dict[filter]['u']
+            meanq, meanu = np.mean(q), np.mean(u)
+            stdq, stdu = np.std(q), np.std(u)
+            indexes = np.where(meanq - 3 * stdq < q.all() < meanq + 3 * stdq)
+            q, u = q[indexes], u[indexes]
+            indexes = np.where(meanu - 3 * stdu < u.all() < meanu + 3 * stdu)
+            q, u = q[indexes], u[indexes]
+            
+            ax.plot(q, u, f'{color}o', alpha=0.25, label=f'{filter}')
+            ax.axhline(0, color='r', linestyle='--', alpha=0.25)
+            ax.axvline(0, color='r', linestyle='--', alpha=0.25)
+            ax.plot(meanq, meanu, f'{color}*')
+            ax.annotate(f'({meanq:.3f},{meanu:.3f})', (meanq*0.95,meanu), fontsize=10, ha='right')
+            if idxy == rows-1:
+                ax.set_xlabel('q')
+            ax.legend()
+            ax.grid()
+            ax.set_title(star)
+plt.show()
 
 
+#--------------------------------------------------------------------------------------------------------------------------
+
+# rows, columns = 2,2
+# fig, axs = plt.subplots(rows, columns, figsize=(20, 4), sharex='col', sharey='row')
 # for idxy in range(rows):
-#     axs[idxy,0].set_ylabel('u')
 #     for idxx in range(columns):
 #         ax = axs[idxy, idxx]
+#         ax.set_ylabel('u')
 #         star = list(high_polarized_stars.keys())[idxx+columns*idxy]
 #         colors = ['b', 'r', 'g', 'k', 'm']
-#         base_path = os.path.join('..', '..', 'High polarized stars', star, 'reduced', star )
+#         base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star, 'reduced', star )
 #         csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
 #         qu_dict = sort_qu_per_filter(csv_file_name)
 #         for idx, filter in enumerate(['B', 'V', 'R', 'I', 'L']):
@@ -39,24 +75,3 @@ fig, axs = plt.subplots(rows, columns, figsize=(20, 4))
 #             ax.grid()
 #             ax.set_title(star)
 # plt.show()
-
-for idxy in range(rows):
-    for idxx in range(columns):
-        ax = axs[idxx]
-        ax.set_ylabel('u')
-        star = list(high_polarized_stars.keys())[idxx+columns*idxy]
-        colors = ['b', 'r', 'g', 'k', 'm']
-        base_path = os.path.join('..', '..', 'High polarized stars', star, 'reduced', star )
-        csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
-        qu_dict = sort_qu_per_filter(csv_file_name)
-        for idx, filter in enumerate(['B', 'V', 'R', 'I', 'L']):
-            color = colors.pop(0)
-            ax.plot(qu_dict[filter]['q'], qu_dict[filter]['u'], f'{color}o', alpha=0.25, label=f'{filter}')
-            ax.axhline(0, color='r', linestyle='--', alpha=0.25)
-            ax.axvline(0, color='r', linestyle='--', alpha=0.25)
-            if idxy == rows-1:
-                ax.set_xlabel('q')
-            ax.legend()
-            ax.grid()
-            ax.set_title(star)
-plt.show()

@@ -17,7 +17,7 @@ sep = 0
 for filter in ['V', 'R', 'I']:
     new_path = os.path.join(src_path, f'{filter} Filter')
     xcoord, ycoord, _ = track_obj_over_images(new_path)
-    plt.plot(xcoord, ycoord-sep, 'o-', alpha = 0.2, label=f'{filter}')
+    plt.plot(xcoord, ycoord-sep, 'o', alpha = 0.2, label=f'{filter}')
     sep+=150
 
 

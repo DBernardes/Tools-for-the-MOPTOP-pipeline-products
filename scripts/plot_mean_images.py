@@ -11,7 +11,7 @@ for filter in ['V', 'R', 'I']:
     # print(f'Filter: {filter}\n')
     new_path = os.path.join(src_path, f'{filter} Filter')
     mean = calculate_mean_images(new_path)
-    plt.plot(mean, 'o-', alpha = 0.5, label=f'{filter}')
+    plt.plot(mean, 'o', alpha = 0.5, label=f'{filter}')
 
 plt.xlabel('Image number')
 plt.ylabel('Counts level (ADU)')

@@ -11,7 +11,7 @@ __copyright__   = "Copyright 2023, Liverpool John Moores University"
 from tools import manipulate_csv_file
 import os
 
-star_name = 'BD+33 2642'
-base_path = os.path.join('..', '..', 'Low polarized stars', star_name, 'reduced', star_name )
+star_name = 'HD155197'
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star_name, 'reduced', star_name )
 csv_file_name = os.path.join(base_path, 'raw_data.csv')
 manipulate_csv_file(csv_file_name)
