@@ -11,12 +11,12 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-min, max =  59681,59707
-star_name = 'BD+32 3739'
-camera = 4
+min, max =  59834,59903
+star_name = 'HILT960'
+camera = 3
 alpha = 0.7
 fontsize = 9
-base_path = os.path.join('..', '..', 'Low polarized stars', star_name)
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star_name)
 fig, axs = plt.subplots(3, 3, figsize=(15, 7), sharey='row')
 axs[2,0].set_xlabel(f'Photons cam{camera}')
 axs[2,1].set_xlabel('X axis')

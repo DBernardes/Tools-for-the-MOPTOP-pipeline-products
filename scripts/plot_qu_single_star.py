@@ -15,7 +15,7 @@ import numpy as np
 from sys import exit
 
 
-star_name = 'VICyg12'
+star_name = 'HILT960'
 fig, axs = plt.subplots(5, 1, figsize=(18, 5), sharex=True)
 axs[0].set_title(f'Star {star_name}')
 

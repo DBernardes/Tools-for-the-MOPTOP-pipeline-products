@@ -23,7 +23,7 @@ from sys import exit
 
 
 low_polarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD212311':0.028, 'BD+28 4211':0.063, 'G191B2B':0.090, 'BD+33 2642':0.145}
-high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0}
+high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0, 'HILT960':0}
 #https://www.not.iac.es/instruments/turpol/std/zpstd.html
 
 def manipulate_csv_file(path):
@@ -124,7 +124,7 @@ def select_images_keyword_interval(path: str, dest_path: str, keyword:str, min:f
             dest_file = os.path.join(dest_path, file)
             shutil.copyfile(src_file, dest_file)
 
-def select_images_keyword_value(path: str, dest_path: str, keyword:str, value: float|int|str, tag:str='.fits')-> None:
+def select_images_keyword_value(path: str, dest_path: str, keyword:str, value: float|int|str, tag:str='.fits', sort_images=False)-> None:
     """Select those images in which the keyword matches the provided value
 
     Args:
@@ -133,9 +133,13 @@ def select_images_keyword_value(path: str, dest_path: str, keyword:str, value: f
         keyword (str): header keyword
         value (float, int, str): value of the keyword
     """
-    files = _sort_files(path, tag)
+    if sort_images:
+        files = _sort_files(path, tag)
+    else:
+        files = [f for f in os.listdir(path) if tag in f]
     os.makedirs(dest_path, exist_ok=True)
     for file in files:
+        print(file)
         src_file = os.path.join(path, file)
         hdr = fits.getheader(src_file)
         if hdr[keyword] == value:
@@ -210,3 +214,16 @@ def get_coords_in_series(path:str, dates:list, mjds:list):
         xcoord = np.append(xcoord, x)
         ycoord = np.append(ycoord, y)
     return xcoord, ycoord
+
+
+def sigma_clipping(x, y, sigma=5, iter=5):
+    x, y,  = np.asarray(x), np.asarray(y)
+    for _ in range(iter):
+        medianx, mediany = np.median(x), np.median(y)
+        stdx = np.median(np.abs(x - medianx))
+        stdy = np.median(np.abs(y - mediany))
+        indexes = np.where((medianx-sigma*stdx<x) & (x<medianx+sigma*stdx))
+        x, y = x[indexes], y[indexes]
+        indexes = np.where((mediany-sigma*stdy<y) & (y<mediany+sigma*stdy))
+        x, y = x[indexes], y[indexes]
+    return x, y
