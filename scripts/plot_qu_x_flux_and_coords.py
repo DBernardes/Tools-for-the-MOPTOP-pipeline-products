@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-min, max =  59834,59903
-star_name = 'HILT960'
-camera = 3
+min, max =  59860,59932
+star_name = 'VICyg12'
+camera = 4
 alpha = 0.7
 fontsize = 9
 base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star_name)

@@ -16,15 +16,14 @@ import shutil
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-from stat import S_ISREG, ST_CTIME, ST_MODE
-import glob
 from numpy import ndarray
-from sys import exit
 
 
 low_polarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD212311':0.028, 'BD+28 4211':0.063, 'G191B2B':0.090, 'BD+33 2642':0.145}
-high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0, 'HILT960':0}
 #https://www.not.iac.es/instruments/turpol/std/zpstd.html
+high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0, 'HILT960':0}
+#https://www.not.iac.es/instruments/turpol/std/hpstd.html
+
 
 def manipulate_csv_file(path):
     """Manipulate the raw_data csv file
@@ -215,8 +214,7 @@ def get_coords_in_series(path:str, dates:list, mjds:list):
         ycoord = np.append(ycoord, y)
     return xcoord, ycoord
 
-
-def sigma_clipping(x, y, sigma=5, iter=5):
+def sigma_clipping(x, y, sigma=5, iter=1):
     x, y,  = np.asarray(x), np.asarray(y)
     for _ in range(iter):
         medianx, mediany = np.median(x), np.median(y)
