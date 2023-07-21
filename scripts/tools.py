@@ -23,6 +23,7 @@ low_polarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD21
 #https://www.not.iac.es/instruments/turpol/std/zpstd.html
 high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0, 'HILT960':0}
 #https://www.not.iac.es/instruments/turpol/std/hpstd.html
+LIMIT_MJD = 59774
 
 
 def manipulate_csv_file(path):
@@ -225,3 +226,16 @@ def sigma_clipping(x, y, sigma=5, iter=1):
         indexes = np.where((mediany-sigma*stdy<y) & (y<mediany+sigma*stdy))
         x, y = x[indexes], y[indexes]
     return x, y
+
+def read_calculated_qu_values():
+    caculated_qu = {'B':(), 'V':(), 'R':(), 'I':(), 'L':(),}
+    csv_file_name = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', 'mean_qu_values.csv')
+    df = pd.read_csv(csv_file_name)
+    for star in df['star']:
+        if star not in ['GD319', 'HD14069', 'BD+32 3739']:
+            df.drop(df[df['star'] == star].index, inplace = True)
+    for filter in caculated_qu.keys():
+        rows = df.loc[df['filter'] == filter]
+        q, u =  np.mean(rows['q']), np.mean(rows['u'])
+        caculated_qu[filter] = (q,u)
+    return caculated_qu

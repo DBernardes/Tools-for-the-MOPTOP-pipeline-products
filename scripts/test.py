@@ -17,7 +17,6 @@ df = pd.read_csv(csv_file_name)
 for star in df['star']:
     if star not in ['GD319', 'HD14069', 'BD+32 3739']:
         df.drop(df[df['star'] == star].index, inplace = True)
-
 rows = df.loc[df['filter'] == 'B']
 
 print(rows)
