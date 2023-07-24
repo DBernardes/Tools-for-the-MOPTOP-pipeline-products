@@ -13,16 +13,17 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-star_name = 'BD+57 2615'
+star_name = 'BD+32 3739'
 
-base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star_name, 'reduced', star_name )
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, 'reduced', star_name )
 csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
 pol_dict = calculate_polarization(csv_file_name)
 
 for filter in pol_dict.keys():
-    plt.plot(pol_dict[filter][0], pol_dict[filter][1], 'o', label=f'filter {filter}', alpha = 0.5)
+    mjd, pol, err = pol_dict[filter]
+    plt.errorbar(mjd, pol, yerr = err, fmt='o', label=f'filter {filter}', alpha = 0.5)
 
-plt.axhline(high_polarized_stars[star_name], color='r', linestyle='--', label='Literature')
+plt.axhline(low_polarized_stars[star_name], color='r', linestyle='--', label='Literature')
 plt.xlabel('Time (MJD)')
 plt.ylabel('Polarization (%)')
 plt.title(f'Polarization as a function of time for the star {star_name}')

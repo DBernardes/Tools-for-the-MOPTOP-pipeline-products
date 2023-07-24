@@ -61,9 +61,13 @@ def calculate_polarization(path):
         mjd = np.asarray(qu_dict[key]['mjd'])
         q = np.asarray(qu_dict[key]['q'])
         u = np.asarray(qu_dict[key]['u'])
-        pol = np.sqrt(np.square(q) + np.square(u))*100
+        q_err = np.asarray(qu_dict[key]['q_err'])
+        u_err = np.asarray(qu_dict[key]['u_err'])
+        pol = np.sqrt(q**2 + u**2)*100
+        err = np.sqrt( (q/pol)**2 * q_err**2 + (u/pol)**2 * u_err**2)*100
         pol_dict[key].append(mjd)
         pol_dict[key].append(pol)
+        pol_dict[key].append(err)
         
     return pol_dict
 
@@ -79,7 +83,9 @@ def sort_qu_per_filter(path:str)-> dict:
         rows = df.loc[df['wave'] == f'MOP-{filter}']
         qu_dict[filter] = {'mjd': rows['mjd'],
             'q':rows['q_avg'],
-            'u':rows['u_avg']
+            'u':rows['u_avg'],
+            'q_err':rows['q_err'],
+            'u_err':rows['u_err']
             }
 
     return qu_dict
@@ -215,17 +221,28 @@ def get_coords_in_series(path:str, dates:list, mjds:list):
         ycoord = np.append(ycoord, y)
     return xcoord, ycoord
 
-def sigma_clipping(x, y, sigma=5, iter=1):
+def sigma_clipping(x, y, x_err=[], y_err=[], sigma=5, iter=1):
     x, y,  = np.asarray(x), np.asarray(y)
+    if len(x_err) == 0:
+        x_err = np.zeros(len(x))
+    else:
+        x_err = np.asarray(x_err)
+    if len(y_err) == 0: 
+        y_err = np.zeros(len(y))
+    else:
+        y_err = np.asarray(y_err)
     for _ in range(iter):
         medianx, mediany = np.median(x), np.median(y)
         stdx = np.median(np.abs(x - medianx))
         stdy = np.median(np.abs(y - mediany))
         indexes = np.where((medianx-sigma*stdx<x) & (x<medianx+sigma*stdx))
         x, y = x[indexes], y[indexes]
+        x_err, y_err = x_err[indexes], y_err[indexes]
         indexes = np.where((mediany-sigma*stdy<y) & (y<mediany+sigma*stdy))
         x, y = x[indexes], y[indexes]
-    return x, y
+        x_err, y_err = x_err[indexes], y_err[indexes]
+        
+    return x, y, x_err, y_err
 
 def read_calculated_qu_values():
     caculated_qu = {'B':(), 'V':(), 'R':(), 'I':(), 'L':(),}
@@ -236,6 +253,6 @@ def read_calculated_qu_values():
             df.drop(df[df['star'] == star].index, inplace = True)
     for filter in caculated_qu.keys():
         rows = df.loc[df['filter'] == filter]
-        q, u =  np.mean(rows['q']), np.mean(rows['u'])
-        caculated_qu[filter] = (q,u)
+        q, u =  rows['q'], rows['u']
+        caculated_qu[filter] = (np.mean(q), np.std(q), np.mean(u), np.std(u))
     return caculated_qu

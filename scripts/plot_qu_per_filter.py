@@ -34,8 +34,10 @@ for stokes_param in ['q', 'u']:
             base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', key, 'reduced', key )
             csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
             qu_dict = sort_qu_per_filter(csv_file_name)
-            tmp = np.asarray(qu_dict[filter][stokes_param]) - sep
-            ax.plot(qu_dict[filter]['mjd'], tmp, f'{color}o', alpha=0.25, label=f'{key}')
+            mjd = qu_dict[filter]['mjd']
+            qu_val = np.asarray(qu_dict[filter][stokes_param]) - sep
+            qu_err = np.asarray(qu_dict[filter][f'{stokes_param}_err'])
+            ax.errorbar(mjd, qu_val, yerr=qu_err, fmt=f'{color}o', alpha=0.25, label=f'{key}')
             #ax.set_ylim(-0.1,  0.1)
             #ax.set_xlim(59600, 60100)
             ax.legend()
