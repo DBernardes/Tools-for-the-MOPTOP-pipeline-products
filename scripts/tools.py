@@ -97,12 +97,12 @@ def track_obj_over_images(path:str, tag:str='.fits'):
         path (str): directory of the images
     """
     files = _sort_files(path, tag)
-    xcoord, ycoord, mjds = ndarray, ndarray, ndarray
+    xcoord, ycoord, mjds = np.array([]), np.array([]), np.array([])
     for file in files:
         x, y, mjd = get_obj_coords(path, file)
-        xcoord.append(x)
-        ycoord.append(y)
-        mjds.append(mjd)
+        xcoord = np.append(xcoord, x)
+        ycoord = np.append(ycoord, y)
+        mjds = np.append(mjds, mjd)
     return xcoord, ycoord, mjds
 
 def get_obj_coords(path:str, file:str):
@@ -205,9 +205,9 @@ def _find_img_closest_value(path:str, files:list, keyword:str, value):
     index = np.argmin(np.abs(np.array(mjds)-value))
     return files[index]
 
-def get_coords_in_series(path:str, dates:list, mjds:list):
+def get_coords_in_series(path:str, dates:list, mjds:list, tag:str='.fits'):
     xcoord, ycoord, header_dates = np.array([]), np.array([]), []
-    files = os.listdir(path)
+    files = [f for f in os.listdir(path) if tag in f]
     for file in files:
         hdr = fits.getheader(os.path.join(path, file))
         header_dates.append(hdr['date'])
@@ -216,7 +216,7 @@ def get_coords_in_series(path:str, dates:list, mjds:list):
         indexes = np.where(np.array(header_dates) == date)[0]
         new_files = [files[idx] for idx in indexes]
         file = _find_img_closest_value(path, new_files, 'MJD', mjd)
-        x, y, _ = get_obj_coords(path, files[indexes[-1]])
+        x, y, _ = get_obj_coords(path, file)
         xcoord = np.append(xcoord, x)
         ycoord = np.append(ycoord, y)
     return xcoord, ycoord

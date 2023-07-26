@@ -11,21 +11,23 @@ from tools import track_obj_over_images
 
 star_name = 'BD+32 3739'
 min, max =  59768, 59825
-src_path = os.path.join('..', '..', 'Low polarized stars', star_name, star_name, 'selected_files', f'{min}-{max}', 'cam3')
-
-sep = 0
-for filter in ['V', 'R', 'I']:
-    new_path = os.path.join(src_path, f'{filter} Filter')
-    xcoord, ycoord, _ = track_obj_over_images(new_path)
-    plt.plot(xcoord, ycoord-sep, 'o', alpha = 0.2, label=f'{filter}')
-    sep+=150
+src_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, 'several positions in image', star_name)
 
 
+new_path = os.path.join(src_path, f'{filter} Filter')
+xcoord, ycoord, _ = track_obj_over_images(src_path, '3_e')
+plt.plot(xcoord, ycoord, 'ro-', alpha = 0.2, label='cam3')
 
+xcoord, ycoord, _ = track_obj_over_images(src_path, '4_e')
+plt.plot(xcoord, ycoord, 'bo-', alpha = 0.2, label='cam4')
+
+
+plt.hlines(512, 0, 1024, color='r', linestyle='--', alpha=0.25)
+plt.vlines(512, 0, 1024, color='r', linestyle='--', alpha=0.25)
 plt.xlim(0, 1024)
 plt.ylim(0, 1024)
 plt.xlabel('X axis')
 plt.ylabel('Y axis')
-plt.title('sensor of the CCD')
+plt.title('CCD sensor')
 plt.legend()
 plt.show()

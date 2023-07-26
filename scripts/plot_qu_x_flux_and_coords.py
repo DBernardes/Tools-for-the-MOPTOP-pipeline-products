@@ -11,12 +11,13 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-min, max =  59681,59707
+min, max =  0,1e10
 star_name = 'BD+32 3739'
-camera = 4
+experiment = 'several positions in image'
+camera = 3
 alpha = 0.7
 fontsize = 9
-base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name)
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment)
 fig, axs = plt.subplots(3, 3, figsize=(15, 7), sharey='row')
 axs[2,0].set_xlabel(f'Photons cam{camera}')
 axs[2,1].set_xlabel('X axis')
@@ -46,7 +47,7 @@ def calc_plot_parameters(df, x_str):
     res_u = stats.spearmanr(x, u)
     return x, q, q_err, u, u_err, res_q, res_u
 
-for idx, filter in enumerate(['V','R', 'I']):
+for idx, filter in enumerate(['V']):
     print(f'processing the images of filter {filter}...')
 
     new_path  = os.path.join(base_path, 'reduced', star_name, 'manipulated_data.csv')
@@ -63,8 +64,8 @@ for idx, filter in enumerate(['V','R', 'I']):
     plot_graph(ax, photons, q, q_err, u, u_err, res_p1q, res_p1u, filter, tmp)
 
     #------------------------------------------------------------
-    new_path  = os.path.join(base_path, star_name, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
-    xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'])
+    new_path  = os.path.join(base_path, star_name)#, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
+    xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'], f'{camera}_e')
     rows['xcoord'] = xcoord
     rows['ycoord'] = ycoord
 
