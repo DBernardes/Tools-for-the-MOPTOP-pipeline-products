@@ -12,15 +12,16 @@ from tools import select_images_keyword_interval, delete_file_keyword_value, sel
 import os
 from sys import exit
 
-min, max =  59860,59932 #parecido com o intervalo da outra estrela
-star_name = 'VICyg12'
-src_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'High polarized stars', star_name, star_name, 'LTOps')
+min, max =  59775, 60051
+star_name = 'HD14069'
+experiment = 'all data'
+src_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, star_name)
 dest_path = os.path.join(src_path, '..', 'selected_files', f'{min}-{max}')
 # select_images_keyword_interval(src_path, dest_path, 'MJD', min, max)
 
 
 for filter in ['V', 'R', 'I']:
-    src_path_1 = os.path.join(dest_path, 'cam4')
+    src_path_1 = os.path.join(dest_path, 'cam3')
     dest_path_1 = os.path.join(src_path_1, f'{filter} Filter')
     select_images_keyword_value(src_path_1, dest_path_1, 'FILTER1', f'MOP-{filter}')
 

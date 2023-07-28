@@ -10,14 +10,15 @@ from tools import track_obj_over_images
 import numpy as np
 import pandas as pd
 
-min, max =  59768, 59825
+min, max =  59775, 59938
 star_name = 'BD+32 3739'
-base_path = os.path.join('..', '..', 'Low polarized stars', star_name)
+experiment = 'all data'
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment)
 fig, axs = plt.subplots(3, 3, figsize=(15, 7))
-camera = 4
+camera = 3
 
-for idx, filter in enumerate(['V', 'R', 'I']):
-    new_path  = os.path.join(base_path, star_name, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
+for idx, filter in enumerate(['V']):
+    new_path  = os.path.join(base_path, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
     xcoord, ycoord, mjd = track_obj_over_images(new_path)
     ax = axs[0, idx]
     ax.plot(mjd, xcoord, 'o', label=f'x coord')
