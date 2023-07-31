@@ -13,6 +13,6 @@ import os
 
 star_name = 'BD+32 3739'
 experiment= 'several positions in image'
-base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'reduced', star_name )
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'cumulative', 'reduced', star_name )
 csv_file_name = os.path.join(base_path, 'raw_data.csv')
 manipulate_csv_file(csv_file_name)

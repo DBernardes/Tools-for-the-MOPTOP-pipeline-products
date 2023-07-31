@@ -14,10 +14,10 @@ from scipy import stats
 min, max =  0,1e10
 star_name = 'BD+32 3739'
 experiment = 'several positions in image'
-camera = 3
+camera = 4
 alpha = 0.7
 fontsize = 9
-base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment)
+base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'cumulative')
 fig, axs = plt.subplots(3, 3, figsize=(15, 7), sharey='row')
 axs[2,0].set_xlabel(f'Photons cam{camera}')
 axs[2,1].set_xlabel('X axis')
@@ -27,7 +27,7 @@ axs[2,2].set_xlabel('Y axis')
 def plot_graph(ax, x, q, q_err, u, u_err, res_q, res_u, filter, tmp):
     ax.errorbar(x, q, yerr=q_err, fmt='o', label=f'q', alpha=alpha)
     ax.errorbar(x, u, yerr=u_err, fmt='o', label=f'u+{tmp:.2f}', alpha=alpha)
-    ax.annotate(f'coef_q={res_q.statistic:.2f}, pval_q={res_q.pvalue:.2f}\ncoef_u={res_u.statistic:.2f}, pval_u={res_u.pvalue:.2f}',
+    ax.annotate(f'coef_q={res_q.statistic:.3f}, pval_q={res_q.pvalue:.3f}\ncoef_u={res_u.statistic:.3f}, pval_u={res_u.pvalue:.3f}',
             xy=(.05, .95), xycoords='axes fraction',
             ha='left', va='top',
             fontsize=fontsize,
@@ -64,7 +64,7 @@ for idx, filter in enumerate(['V']):
     plot_graph(ax, photons, q, q_err, u, u_err, res_p1q, res_p1u, filter, tmp)
 
     #------------------------------------------------------------
-    new_path  = os.path.join(base_path, star_name)#, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
+    new_path  = os.path.join(base_path, star_name, f'cam{camera}')#, 'selected_files', f'{min}-{max}', f'cam{camera}', f'{filter} Filter')
     xcoord, ycoord = get_coords_in_series(new_path, rows['date'], rows['mjd'], f'{camera}_e')
     rows['xcoord'] = xcoord
     rows['ycoord'] = ycoord

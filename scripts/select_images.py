@@ -13,10 +13,10 @@ import os
 from sys import exit
 
 min, max =  59775, 60051
-star_name = 'HD14069'
-experiment = 'all data'
-src_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, star_name)
-dest_path = os.path.join(src_path, '..', 'selected_files', f'{min}-{max}')
+star_name = 'BD+32 3739'
+experiment = 'several positions in image'
+src_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'cumulative', star_name)
+dest_path = src_path#os.path.join(src_path, '..', 'selected_files', f'{min}-{max}')
 # select_images_keyword_interval(src_path, dest_path, 'MJD', min, max)
 
 

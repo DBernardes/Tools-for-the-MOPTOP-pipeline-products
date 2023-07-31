@@ -23,7 +23,7 @@ axs[0].set_title(f'Star {star_name}')
 for idx, filter in enumerate(['B', 'V', 'R', 'I', 'L']):
     ax = axs[idx]
     #ax.set_title(f'Filter {filter}')
-    base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'reduced', star_name )
+    base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'cumulative', 'reduced', star_name )
     csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
     qu_dict = sort_qu_per_filter(csv_file_name)
     q = np.asarray(qu_dict[filter]['q'])
