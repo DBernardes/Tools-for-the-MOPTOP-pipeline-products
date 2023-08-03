@@ -2,10 +2,8 @@
 
 """tools.py: this file has a set of functions developed for the analysis of the products obtained running the MOPTOP pipeline in a data set."""
 
-__author__      = "Denis Bernardes"
-__copyright__   = "Copyright 2023, Liverpool John Moores University"
-
-
+__author__ = "Denis Bernardes"
+__copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 
 import os
@@ -19,10 +17,24 @@ import astropy.units as u
 from numpy import ndarray
 
 
-low_polarized_stars = {'GD319':0.045, 'HD14069':0.111, 'BD+32 3739':0.039, 'HD212311':0.028, 'BD+28 4211':0.063, 'G191B2B':0.090, 'BD+33 2642':0.145}
-#https://www.not.iac.es/instruments/turpol/std/zpstd.html
-high_polarized_stars = {'BD+64 106':0, 'HD251204':0, 'VICyg12':0, 'HD155197':0, 'HILT960':0}
-#https://www.not.iac.es/instruments/turpol/std/hpstd.html
+low_polarized_stars = {
+    "GD319": 0.045,
+    "HD14069": 0.111,
+    "BD+32 3739": 0.039,
+    "HD212311": 0.028,
+    "BD+28 4211": 0.063,
+    "G191B2B": 0.090,
+    "BD+33 2642": 0.145,
+}
+# https://www.not.iac.es/instruments/turpol/std/zpstd.html
+high_polarized_stars = {
+    "BD+64 106": 0,
+    "HD251204": 0,
+    "VICyg12": 0,
+    "HD155197": 0,
+    "HILT960": 0,
+}
+# https://www.not.iac.es/instruments/turpol/std/hpstd.html
 LIMIT_MJD = 59774
 
 
@@ -36,14 +48,28 @@ def manipulate_csv_file(path):
         path (str): path of the raw_data file
     """
     df = pd.read_csv(path)
-    df = df[df['q_avg'].notna()]
+    df = df[df["q_avg"].notna()]
     for column_name in df.columns.values:
-        if column_name not in ['q_avg', 'q_err','u_avg','u_err', 'date', 'mjd', 'wave', 's1_src_cam1', 's1_src_cam1_err', 's1_src_cam2', 's1_src_cam2_err', 'time']:
+        if column_name not in [
+            "q_avg",
+            "q_err",
+            "u_avg",
+            "u_err",
+            "date",
+            "mjd",
+            "wave",
+            "s1_src_cam1",
+            "s1_src_cam1_err",
+            "s1_src_cam2",
+            "s1_src_cam2_err",
+            "time",
+        ]:
             df = df.drop(column_name, axis=1)
-    df = df.sort_values(by=['wave', 'mjd'])
-    base_path = path.split('/')[:-1]
-    new_path = os.path.join(*base_path, 'manipulated_data.csv')
+    df = df.sort_values(by=["wave", "mjd"])
+    base_path = path.split("/")[:-1]
+    new_path = os.path.join(*base_path, "manipulated_data.csv")
     pd.DataFrame.to_csv(df, new_path, index=False)
+
 
 def calculate_polarization(path):
     """Calculate the polarization of an object
@@ -56,22 +82,23 @@ def calculate_polarization(path):
         path (str): path of the csv file
     """
     qu_dict = sort_qu_per_filter(path)
-    pol_dict = {'B':[], 'V':[], 'R':[], 'I':[], 'L':[]}
+    pol_dict = {"B": [], "V": [], "R": [], "I": [], "L": []}
     for key in qu_dict.keys():
-        mjd = np.asarray(qu_dict[key]['mjd'])
-        q = np.asarray(qu_dict[key]['q'])
-        u = np.asarray(qu_dict[key]['u'])
-        q_err = np.asarray(qu_dict[key]['q_err'])
-        u_err = np.asarray(qu_dict[key]['u_err'])
-        pol = np.sqrt(q**2 + u**2)*100
-        err = np.sqrt( (q/pol)**2 * q_err**2 + (u/pol)**2 * u_err**2)*100
+        mjd = np.asarray(qu_dict[key]["mjd"])
+        q = np.asarray(qu_dict[key]["q"])
+        u = np.asarray(qu_dict[key]["u"])
+        q_err = np.asarray(qu_dict[key]["q_err"])
+        u_err = np.asarray(qu_dict[key]["u_err"])
+        pol = np.sqrt(q**2 + u**2) * 100
+        err = np.sqrt((q / pol) ** 2 * q_err**2 + (u / pol) ** 2 * u_err**2) * 100
         pol_dict[key].append(mjd)
         pol_dict[key].append(pol)
         pol_dict[key].append(err)
-        
+
     return pol_dict
 
-def sort_qu_per_filter(path:str)-> dict:
+
+def sort_qu_per_filter(path: str) -> dict:
     """Sort the q and u values of the Stoke parameters for each filter
 
     Args:
@@ -79,18 +106,20 @@ def sort_qu_per_filter(path:str)-> dict:
     """
     df = pd.read_csv(path)
     qu_dict = {}
-    for filter in ['B', 'V', 'R', 'I', 'L']:
-        rows = df.loc[df['wave'] == f'MOP-{filter}']
-        qu_dict[filter] = {'mjd': rows['mjd'],
-            'q':rows['q_avg'],
-            'u':rows['u_avg'],
-            'q_err':rows['q_err'],
-            'u_err':rows['u_err']
-            }
+    for filter in ["B", "V", "R", "I", "L"]:
+        rows = df.loc[df["wave"] == f"MOP-{filter}"]
+        qu_dict[filter] = {
+            "mjd": rows["mjd"],
+            "q": rows["q_avg"],
+            "u": rows["u_avg"],
+            "q_err": rows["q_err"],
+            "u_err": rows["u_err"],
+        }
 
     return qu_dict
 
-def track_obj_over_images(path:str, tag:str='.fits'):
+
+def track_obj_over_images(path: str, tag: str = ".fits"):
     """Track object over the images
 
     Args:
@@ -105,14 +134,25 @@ def track_obj_over_images(path:str, tag:str='.fits'):
         mjds = np.append(mjds, mjd)
     return xcoord, ycoord, mjds
 
-def get_obj_coords(path:str, file:str):
-    hdr = fits.getheader(os.path.join(path, file))
-    wcs = WCS(hdr)  
-    coord = SkyCoord(f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}', frame='fk5', unit=(u.hourangle, u.deg))
-    x, y = wcs.world_to_pixel(coord)
-    return x, y, hdr['MJD']
 
-def select_images_keyword_interval(path: str, dest_path: str, keyword:str, min:float = -np.infty, max:float = np.infty, tag:str='.fits')-> None:
+def get_obj_coords(path: str, file: str):
+    hdr = fits.getheader(os.path.join(path, file))
+    wcs = WCS(hdr)
+    coord = SkyCoord(
+        f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}', frame="fk5", unit=(u.hourangle, u.deg)
+    )
+    x, y = wcs.world_to_pixel(coord)
+    return x, y, hdr["MJD"]
+
+
+def select_images_keyword_interval(
+    path: str,
+    dest_path: str,
+    keyword: str,
+    min: float = -np.infty,
+    max: float = np.infty,
+    tag: str = ".fits",
+) -> None:
     """Select those images in which the keyword is inside the min and max values range
 
     Args:
@@ -130,7 +170,15 @@ def select_images_keyword_interval(path: str, dest_path: str, keyword:str, min:f
             dest_file = os.path.join(dest_path, file)
             shutil.copyfile(src_file, dest_file)
 
-def select_images_keyword_value(path: str, dest_path: str, keyword:str, value: float|int|str, tag:str='.fits', sort_images=False)-> None:
+
+def select_images_keyword_value(
+    path: str,
+    dest_path: str,
+    keyword: str,
+    value: float | int | str,
+    tag: str = ".fits",
+    sort_images=False,
+) -> None:
     """Select those images in which the keyword matches the provided value
 
     Args:
@@ -152,7 +200,10 @@ def select_images_keyword_value(path: str, dest_path: str, keyword:str, value: f
             dest_file = os.path.join(dest_path, file)
             shutil.copyfile(src_file, dest_file)
 
-def delete_file_keyword_value(path: str, keyword:str, value: float | str | int, tag:str='.fits')-> None:
+
+def delete_file_keyword_value(
+    path: str, keyword: str, value: float | str | int, tag: str = ".fits"
+) -> None:
     """Delete files found in a folder based on the provided header keyword value
 
     Args:
@@ -167,8 +218,9 @@ def delete_file_keyword_value(path: str, keyword:str, value: float | str | int, 
         if hdr[keyword] == value:
             os.remove(src_file)
     return
- 
-def calculate_mean_images(path, tag:str='.fits'):
+
+
+def calculate_mean_images(path, tag: str = ".fits"):
     files = _sort_files(path, tag)
     mean = []
     for file in files:
@@ -177,7 +229,8 @@ def calculate_mean_images(path, tag:str='.fits'):
         mean.append(tmp)
     return np.asarray(mean)
 
-def calculate_maximum_images(path, tag:str='.fits'):
+
+def calculate_maximum_images(path, tag: str = ".fits"):
     files = _sort_files(path, tag)
     _max = []
     for file in files:
@@ -186,48 +239,57 @@ def calculate_maximum_images(path, tag:str='.fits'):
         _max.append(tmp)
     return np.asarray(_max)
 
-def _sort_files(path:str, tag):
+
+def _sort_files(path: str, tag):
     files = [f for f in os.listdir(path) if tag in f]
     mjd = []
     for file in files:
         new_path = os.path.join(path, file)
-        mjd.append(fits.getheader(new_path)['MJD'])
-    
+        mjd.append(fits.getheader(new_path)["MJD"])
+
     return [x for _, x in sorted(zip(mjd, files))]
 
-def _find_img_closest_value(path:str, files:list, keyword:str, value):
+
+def _find_img_closest_value(path: str, files: list, keyword: str, value):
     mjds = []
     for file in files:
         file = os.path.join(path, file)
         mjd = fits.getheader(file)[keyword]
         mjds.append(mjd)
 
-    index = np.argmin(np.abs(np.array(mjds)-value))
+    index = np.argmin(np.abs(np.array(mjds) - value))
     return files[index]
 
-def get_coords_in_series(path:str, dates:list, mjds:list, tag:str='.fits'):
+
+def get_coords_in_series(path: str, dates: list, mjds: list, tag: str = ".fits"):
     xcoord, ycoord, header_dates = np.array([]), np.array([]), []
     files = [f for f in os.listdir(path) if tag in f]
     for file in files:
         hdr = fits.getheader(os.path.join(path, file))
-        header_dates.append(hdr['date'])
+        header_dates.append(hdr["date"])
 
-    for date , mjd in zip(dates, mjds):
+    for date, mjd in zip(dates, mjds):
         indexes = np.where(np.array(header_dates) == date)[0]
         new_files = [files[idx] for idx in indexes]
-        file = _find_img_closest_value(path, new_files, 'MJD', mjd)
+        file = _find_img_closest_value(path, new_files, "MJD", mjd)
         x, y, _ = get_obj_coords(path, file)
         xcoord = np.append(xcoord, x)
         ycoord = np.append(ycoord, y)
     return xcoord, ycoord
 
+
 def sigma_clipping(x, y, x_err=[], y_err=[], sigma=5, iter=1):
-    x, y,  = np.asarray(x), np.asarray(y)
+    (
+        x,
+        y,
+    ) = np.asarray(
+        x
+    ), np.asarray(y)
     if len(x_err) == 0:
         x_err = np.zeros(len(x))
     else:
         x_err = np.asarray(x_err)
-    if len(y_err) == 0: 
+    if len(y_err) == 0:
         y_err = np.zeros(len(y))
     else:
         y_err = np.asarray(y_err)
@@ -235,24 +297,33 @@ def sigma_clipping(x, y, x_err=[], y_err=[], sigma=5, iter=1):
         medianx, mediany = np.median(x), np.median(y)
         stdx = np.median(np.abs(x - medianx))
         stdy = np.median(np.abs(y - mediany))
-        indexes = np.where((medianx-sigma*stdx<x) & (x<medianx+sigma*stdx))
+        indexes = np.where((medianx - sigma * stdx < x) & (x < medianx + sigma * stdx))
         x, y = x[indexes], y[indexes]
         x_err, y_err = x_err[indexes], y_err[indexes]
-        indexes = np.where((mediany-sigma*stdy<y) & (y<mediany+sigma*stdy))
+        indexes = np.where((mediany - sigma * stdy < y) & (y < mediany + sigma * stdy))
         x, y = x[indexes], y[indexes]
         x_err, y_err = x_err[indexes], y_err[indexes]
-        
+
     return x, y, x_err, y_err
 
+
 def read_calculated_qu_values():
-    caculated_qu = {'B':(), 'V':(), 'R':(), 'I':(), 'L':(),}
-    csv_file_name = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', 'mean_qu_values.csv')
+    caculated_qu = {
+        "B": (),
+        "V": (),
+        "R": (),
+        "I": (),
+        "L": (),
+    }
+    csv_file_name = os.path.join(
+        "..", "..", "Pol charact MOPTOP", "Low polarized stars", "mean_qu_values.csv"
+    )
     df = pd.read_csv(csv_file_name)
-    for star in df['star']:
-        if star not in ['GD319', 'HD14069', 'BD+32 3739']:
-            df.drop(df[df['star'] == star].index, inplace = True)
+    for star in df["star"]:
+        if star not in ["GD319", "HD14069", "BD+32 3739"]:
+            df.drop(df[df["star"] == star].index, inplace=True)
     for filter in caculated_qu.keys():
-        rows = df.loc[df['filter'] == filter]
-        q, u =  rows['q'], rows['u']
+        rows = df.loc[df["filter"] == filter]
+        q, u = rows["q"], rows["u"]
         caculated_qu[filter] = (np.mean(q), np.std(q), np.mean(u), np.std(u))
     return caculated_qu

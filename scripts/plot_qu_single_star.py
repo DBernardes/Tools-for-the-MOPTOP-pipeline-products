@@ -2,10 +2,8 @@
 
 """run.py: this is a scrit to run the functions of the tools.py file."""
 
-__author__      = "Denis Bernardes"
-__copyright__   = "Copyright 2023, Liverpool John Moores University"
-
-
+__author__ = "Denis Bernardes"
+__copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 
 from tools import sort_qu_per_filter
@@ -15,26 +13,36 @@ import numpy as np
 from sys import exit
 
 
-star_name = 'BD+32 3739'
-experiment='several positions in image'
+star_name = "BD+32 3739"
+experiment = "several positions in image"
 fig, axs = plt.subplots(5, 1, figsize=(18, 5), sharex=True)
-axs[0].set_title(f'Star {star_name}')
+axs[0].set_title(f"Star {star_name}")
 
-for idx, filter in enumerate(['B', 'V', 'R', 'I', 'L']):
+for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
     ax = axs[idx]
-    #ax.set_title(f'Filter {filter}')
-    base_path = os.path.join('..', '..', 'Pol charact MOPTOP', 'Low polarized stars', star_name, experiment, 'cumulative', 'reduced', star_name )
-    csv_file_name = os.path.join(base_path, 'manipulated_data.csv')
+    # ax.set_title(f'Filter {filter}')
+    base_path = os.path.join(
+        "..",
+        "..",
+        "Pol charact MOPTOP",
+        "Low polarized stars",
+        star_name,
+        experiment,
+        "cumulative",
+        "reduced",
+        star_name,
+    )
+    csv_file_name = os.path.join(base_path, "manipulated_data.csv")
     qu_dict = sort_qu_per_filter(csv_file_name)
-    q = np.asarray(qu_dict[filter]['q'])
-    u = np.asarray(qu_dict[filter]['u'])
-    q_err = np.asarray(qu_dict[filter]['q_err'])
-    u_err = np.asarray(qu_dict[filter]['u_err'])
-    ax.errorbar(qu_dict[filter]['mjd'], q, yerr=q_err, fmt='bo', alpha=0.5, label=f'q')
-    ax.errorbar(qu_dict[filter]['mjd'], u, yerr=u_err, fmt='ro', alpha=0.5, label=f'u')
-    ax.set_ylim(-0.1,  0.1)
-    #ax.set_xlim(59600, 60100)
+    q = np.asarray(qu_dict[filter]["q"])
+    u = np.asarray(qu_dict[filter]["u"])
+    q_err = np.asarray(qu_dict[filter]["q_err"])
+    u_err = np.asarray(qu_dict[filter]["u_err"])
+    ax.errorbar(qu_dict[filter]["mjd"], q, yerr=q_err, fmt="bo", alpha=0.5, label=f"q")
+    ax.errorbar(qu_dict[filter]["mjd"], u, yerr=u_err, fmt="ro", alpha=0.5, label=f"u")
+    ax.set_ylim(-0.1, 0.1)
+    # ax.set_xlim(59600, 60100)
     ax.legend()
-    ax.set_ylabel(f'Filter {filter}')
-plt.xlabel('Time (MJD)')
+    ax.set_ylabel(f"Filter {filter}")
+plt.xlabel("Time (MJD)")
 plt.show()
