@@ -38,14 +38,13 @@ high_polarized_stars = {
 LIMIT_MJD = 59774
 
 
-def manipulate_csv_file(path):
-    """Manipulate the raw_data csv file
+def manipulate_csv_file(path: str):
+    """Manipulate the raw_data.csv file created by the MOPTOP pipeline
 
-    This function saves another csv file.
-    This file has onyl the relevant information found in the raw_data file
-
-    Args:
-        path (str): path of the raw_data file
+    Parameters
+    ----------
+    path : str
+        Path of the folder where the raw_data.csv file is
     """
     df = pd.read_csv(path)
     df = df[df["q_avg"].notna()]
@@ -71,15 +70,18 @@ def manipulate_csv_file(path):
     pd.DataFrame.to_csv(df, new_path, index=False)
 
 
-def calculate_polarization(path):
-    """Calculate the polarization of an object
+def calculate_polarization(path: str) -> dict:
+    """Calculate the polarization for a set of q and u values
 
-    Given the q and u Stokes parameter in a csv file,
-    this function calculates the percentage and the orientation of the polarization
-    of an astronomical object.
+    Parameters
+    ----------
+    path : str
+        path of the manipulated_data.csv file
 
-    Args:
-        path (str): path of the csv file
+    Returns
+    -------
+    dict
+        polarization values
     """
     qu_dict = sort_qu_per_filter(path)
     pol_dict = {"B": [], "V": [], "R": [], "I": [], "L": []}
@@ -99,10 +101,17 @@ def calculate_polarization(path):
 
 
 def sort_qu_per_filter(path: str) -> dict:
-    """Sort the q and u values of the Stoke parameters for each filter
+    """Sort the q and u values for the filter BVRIL
 
-    Args:
-        path (str): csv file path
+    Parameters
+    ----------
+    path : str
+        path for the manipulated_data.csv file
+
+    Returns
+    -------
+    dict
+        q and u values sorted for the filters BVRIL
     """
     df = pd.read_csv(path)
     qu_dict = {}
@@ -119,11 +128,22 @@ def sort_qu_per_filter(path: str) -> dict:
     return qu_dict
 
 
-def track_obj_over_images(path: str, tag: str = ".fits"):
-    """Track object over the images
+def track_obj_over_images(
+    path: str, tag: str = ".fits"
+) -> tuple[ndarray, ndarray, ndarray]:
+    """Track an object over a series of images
 
-    Args:
-        path (str): directory of the images
+    Parameters
+    ----------
+    path : str
+        path of the folder with the images
+    tag : str, optional
+        a tag to be used for the image names when listing the folder content, by default ".fits"
+
+    Returns
+    -------
+    tuple[ndarray, ndarray, ndarray]
+        Arrays of the x and y coordinates of the object, as well as the MJD values obtained for the set of images
     """
     files = _sort_files(path, tag)
     xcoord, ycoord, mjds = np.array([]), np.array([]), np.array([])
@@ -135,7 +155,21 @@ def track_obj_over_images(path: str, tag: str = ".fits"):
     return xcoord, ycoord, mjds
 
 
-def get_obj_coords(path: str, file: str):
+def get_obj_coords(path: str, file: str) -> tuple:
+    """Get the x and y coordinates of the object in image.
+
+    Parameters
+    ----------
+    path : str
+        path of the folder in which the image is
+    file : str
+        name of the image file
+
+    Returns
+    -------
+    tuple
+        X coordinate, Y coordinate, and the MJD value
+    """
     hdr = fits.getheader(os.path.join(path, file))
     wcs = WCS(hdr)
     coord = SkyCoord(
@@ -153,13 +187,22 @@ def select_images_keyword_interval(
     max: float = np.infty,
     tag: str = ".fits",
 ) -> None:
-    """Select those images in which the keyword is inside the min and max values range
+    """Select images based on an interval of allowed values for a keyword
 
-    Args:
-        src_path (str): path of the FITS files
-        dest_path (str): destination of the selected files
-        min (float, optional): minimum value for MJD. Defaults to None.
-        max (float, optional): maximum value for MJD. Defaults to None.
+    Parameters
+    ----------
+    path : str
+        path of the folder with the set of images
+    dest_path : str
+        destination path
+    keyword : str
+        name of the header keyword to be used
+    min : float, optional
+        minimum value of the keyword, by default -np.infty
+    max : float, optional
+        maximum value of the keyword, by default np.infty
+    tag : str, optional
+        a tag to be used for the image name when listing the folder content, by default ".fits"
     """
     files = _sort_files(path, tag)
     os.makedirs(dest_path, exist_ok=True)
@@ -179,13 +222,23 @@ def select_images_keyword_value(
     tag: str = ".fits",
     sort_images=False,
 ) -> None:
-    """Select those images in which the keyword matches the provided value
+    """Select images based on the value of a keyword
 
-    Args:
-        src_path (str): path of the FITS files
-        dest_path (str): destination of the selected files
-        keyword (str): header keyword
-        value (float, int, str): value of the keyword
+    Parameters
+    ----------
+    path : str
+        folder with the set of images
+    dest_path : str
+        destination path
+    keyword : str
+        keyword name
+    value : float | int | str
+        keyword value
+    tag : str, optional
+        a tag to be used for the image names when listing the folder content, by default ".fits"
+    sort_images : bool, optional
+        if the function should or not to sort the images based on their MHD.
+        This procedure could take a little more time to be done. By default False
     """
     if sort_images:
         files = _sort_files(path, tag)
@@ -204,12 +257,18 @@ def select_images_keyword_value(
 def delete_file_keyword_value(
     path: str, keyword: str, value: float | str | int, tag: str = ".fits"
 ) -> None:
-    """Delete files found in a folder based on the provided header keyword value
+    """Delete images based on a keyword
 
-    Args:
-        src_path (str): source path
-        keyword (str): header keyword
-        value (float, int, str): keyword value
+    Parameters
+    ----------
+    path : str
+        path of the folder with the set of images
+    keyword : str
+        keyword name
+    value : float | str | int
+        keyword value
+    tag : str, optional
+        a tag to be used for the image names when listing the folder content, by default ".fits"
     """
     files = _sort_files(path, tag)
     for file in files:
@@ -220,7 +279,21 @@ def delete_file_keyword_value(
     return
 
 
-def calculate_mean_images(path, tag: str = ".fits"):
+def calculate_mean_images(path: str, tag: str = ".fits") -> ndarray:
+    """Calculate the mean value of a set of images
+
+    Parameters
+    ----------
+    path : str
+        path of the folder with the set of images
+    tag : str, optional
+        a tag to be used for the image names when listing the folder content, by default ".fits"
+
+    Returns
+    -------
+    ndarray
+        mean value calculate for the set of images
+    """
     files = _sort_files(path, tag)
     mean = []
     for file in files:
@@ -230,7 +303,21 @@ def calculate_mean_images(path, tag: str = ".fits"):
     return np.asarray(mean)
 
 
-def calculate_maximum_images(path, tag: str = ".fits"):
+def calculate_maximum_images(path, tag: str = ".fits") -> ndarray:
+    """Calculate the maximum value of a set of images
+
+    Parameters
+    ----------
+    path : str
+        path of the folder with the set of images
+    tag : str, optional
+        a tag to be used for the image names when listing the folder content, by default ".fits"
+
+    Returns
+    -------
+    ndarray
+        maximum value calculate for the set of images
+    """
     files = _sort_files(path, tag)
     _max = []
     for file in files:
@@ -261,7 +348,27 @@ def _find_img_closest_value(path: str, files: list, keyword: str, value):
     return files[index]
 
 
-def get_coords_in_series(path: str, dates: list, mjds: list, tag: str = ".fits"):
+def get_coords_in_series(
+    path: str, dates: list, mjds: list, tag: str = ".fits"
+) -> tuple[float, float]:
+    """Get the x and y coordinates of the object in a series of images found in path
+
+    Parameters
+    ----------
+    path : str
+        path of the folder with the set of images
+    dates : list
+        dates of those images in which the coordinates should be calculated
+    mjds : list
+        mjd of those images in which the coordinates should be calculated
+    tag : str, optional
+        a tag for the files in the folder that should be used, by default ".fits"
+
+    Returns
+    -------
+    tuple[float, float]
+        _description_
+    """
     xcoord, ycoord, header_dates = np.array([]), np.array([]), []
     files = [f for f in os.listdir(path) if tag in f]
     for file in files:
@@ -278,7 +385,29 @@ def get_coords_in_series(path: str, dates: list, mjds: list, tag: str = ".fits")
     return xcoord, ycoord
 
 
-def sigma_clipping(x, y, x_err=[], y_err=[], sigma=5, iter=1):
+def sigma_clipping(x: list, y: list, x_err=[], y_err=[], sigma=5, iter=1) -> tuple:
+    """Perform a sigma clipping for the x and y parameters
+
+    Parameters
+    ----------
+    x : list
+        any parameter to be clipped
+    y : list
+        any parameter to be clipped
+    x_err : list, optional
+        standard deviation of the x paramrter, by default []
+    y_err : list, optional
+        standard deviation of the y parameter, by default []
+    sigma : int, optional
+        number of standard deviations to be used for clipping, by default 5
+    iter : int, optional
+        number of iterations to be used in clipping, by default 1
+
+    Returns
+    -------
+    tuple
+        clipped x and y parameters, with their corresponding standard deviation
+    """
     (
         x,
         y,
@@ -307,7 +436,14 @@ def sigma_clipping(x, y, x_err=[], y_err=[], sigma=5, iter=1):
     return x, y, x_err, y_err
 
 
-def read_calculated_qu_values():
+def read_calculated_qu_values() -> dict:
+    """Read the calculated q and u values found in the 'mean_qu_values' csv file.
+
+    Returns
+    -------
+    dict
+        calculated q and u values for the filter UBVRI of MOPTOP.
+    """
     caculated_qu = {
         "B": (),
         "V": (),
