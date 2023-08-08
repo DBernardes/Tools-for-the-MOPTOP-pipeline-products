@@ -10,7 +10,7 @@ from tools import manipulate_csv_file
 import os
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/cardinal pointing"
+experiment = "several positions in image/initial offset"
 base_path = os.path.join(
     "..",
     "..",

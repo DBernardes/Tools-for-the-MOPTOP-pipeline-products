@@ -12,7 +12,7 @@ from tools import track_obj_over_images
 
 star_name = "BD+32 3739"
 min, max = 59775, 60051
-experiment = "several positions in image/cardinal pointing"
+experiment = "several positions in image/initial offset 2"
 src_path = os.path.join(
     "..",
     "..",

@@ -1,2 +1,2 @@
 # tools-for-pipeline-products
- Tools to deal with the MOPTOP pipeline products
+ Tools to work with the MOPTOP pipeline products
