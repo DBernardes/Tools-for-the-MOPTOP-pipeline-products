@@ -13,7 +13,7 @@ from scipy import stats
 
 min, max = 0, 1e10
 star_name = "BD+32 3739"
-experiment = "several positions in image/cardinal pointing"
+experiment = "several positions in image/dense field"
 camera = 4
 alpha = 0.7
 fontsize = 9

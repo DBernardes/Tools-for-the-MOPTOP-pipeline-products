@@ -62,6 +62,8 @@ def manipulate_csv_file(path: str):
             "s1_src_cam2",
             "s1_src_cam2_err",
             "time",
+            "x",
+            "y",
         ]:
             df = df.drop(column_name, axis=1)
     df = df.sort_values(by=["wave", "mjd"])

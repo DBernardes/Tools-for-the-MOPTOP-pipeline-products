@@ -12,7 +12,7 @@ from tools import track_obj_over_images
 
 star_name = "BD+32 3739"
 min, max = 59775, 60051
-experiment = "several positions in image/initial offset 2"
+experiment = "several positions in image/dense field"
 src_path = os.path.join(
     "..",
     "..",
@@ -34,16 +34,17 @@ for camera in [3, 4]:
         ax.plot(xcoord, ycoord, "o-", alpha=0.8)
 
         medx, medy = np.median(xcoord), np.median(ycoord)
-        ax.plot(medx, medy, "*k")
-        ax.annotate(
-            f"({medx:.0f}, {medy:.0f})",
-            (medx * 1.1, medy * 1.1),
-            fontsize=10,
-            ha="left",
-        )
+        # ax.plot(medx, medy, "*k")
+        # ax.annotate(
+        #     f"({medx:.0f}, {medy:.0f})",
+        #     (medx * 1.1, medy * 1.1),
+        #     fontsize=10,
+        #     ha="left",
+        # )
 
         ax.axvline(512, color="r", linestyle="--", alpha=0.75)
         ax.axhline(512, color="r", linestyle="--", alpha=0.75)
+        ax.axvline(0, color="k", linestyle="--", alpha=0.75)
         if camera == 3:
             ax.set_title(f"Filter {filter}")
         else:
