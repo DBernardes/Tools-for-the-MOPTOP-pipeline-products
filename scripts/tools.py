@@ -16,6 +16,8 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 from numpy import ndarray
 
+import matplotlib.pyplot as plt
+
 
 low_polarized_stars = {
     "GD319": 0.045,
@@ -147,7 +149,7 @@ def track_obj_over_images(
     tuple[ndarray, ndarray, ndarray]
         Arrays of the x and y coordinates of the object, as well as the MJD values obtained for the set of images
     """
-    files = _sort_files(path, tag)
+    files = sort_files(path, tag)
     xcoord, ycoord, mjds = np.array([]), np.array([]), np.array([])
     for file in files:
         x, y, mjd = get_obj_coords(path, file)
@@ -157,28 +159,33 @@ def track_obj_over_images(
     return xcoord, ycoord, mjds
 
 
-def get_obj_coords(path: str, file: str) -> tuple:
-    """Get the x and y coordinates of the object in image.
+def get_obj_coords(
+    file: str, ra: str = None, dec: str = None, unit=(u.hourangle, u.deg)
+) -> tuple[int, int, float]:
+    """Get the object coordinates in image.
 
     Parameters
     ----------
-    path : str
-        path of the folder in which the image is
     file : str
-        name of the image file
+        file name
+    ra : str, optional
+        object right ascension, by default None.
+    dec : str, optional
+        object declination, by default None.
 
     Returns
     -------
-    tuple
-        X coordinate, Y coordinate, and the MJD value
+    tuple[int, int, float]
+        X and Y coordinates of the object, together with the MJD of the image.
     """
-    hdr = fits.getheader(os.path.join(path, file))
+    hdr = fits.getheader(file)
     wcs = WCS(hdr)
-    coord = SkyCoord(
-        f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}', frame="fk5", unit=(u.hourangle, u.deg)
-    )
+    coords_str = f'{hdr["CAT-RA"]} {hdr["CAT-DEC"]}'
+    if None not in [ra, dec]:
+        coords_str = f"{ra} {dec}"
+    coord = SkyCoord(coords_str, frame="fk5", unit=unit)
     x, y = wcs.world_to_pixel(coord)
-    return x, y, hdr["MJD"]
+    return int(x) + 1, int(y) + 1, hdr["MJD"]
 
 
 def select_images_keyword_interval(
@@ -206,7 +213,7 @@ def select_images_keyword_interval(
     tag : str, optional
         a tag to be used for the image name when listing the folder content, by default ".fits"
     """
-    files = _sort_files(path, tag)
+    files = sort_files(path, tag)
     os.makedirs(dest_path, exist_ok=True)
     for file in files:
         src_file = os.path.join(path, file)
@@ -243,7 +250,7 @@ def select_images_keyword_value(
         This procedure could take a little more time to be done. By default False
     """
     if sort_images:
-        files = _sort_files(path, tag)
+        files = sort_files(path, tag)
     else:
         files = [f for f in os.listdir(path) if tag in f]
     os.makedirs(dest_path, exist_ok=True)
@@ -272,7 +279,7 @@ def delete_file_keyword_value(
     tag : str, optional
         a tag to be used for the image names when listing the folder content, by default ".fits"
     """
-    files = _sort_files(path, tag)
+    files = sort_files(path, tag)
     for file in files:
         src_file = os.path.join(path, file)
         hdr = fits.getheader(src_file)
@@ -296,7 +303,7 @@ def calculate_mean_images(path: str, tag: str = ".fits") -> ndarray:
     ndarray
         mean value calculate for the set of images
     """
-    files = _sort_files(path, tag)
+    files = sort_files(path, tag)
     mean = []
     for file in files:
         image = fits.getdata(os.path.join(path, file))
@@ -320,7 +327,7 @@ def calculate_maximum_images(path, tag: str = ".fits") -> ndarray:
     ndarray
         maximum value calculate for the set of images
     """
-    files = _sort_files(path, tag)
+    files = sort_files(path, tag)
     _max = []
     for file in files:
         image = fits.getdata(os.path.join(path, file))
@@ -329,7 +336,7 @@ def calculate_maximum_images(path, tag: str = ".fits") -> ndarray:
     return np.asarray(_max)
 
 
-def _sort_files(path: str, tag):
+def sort_files(path: str, tag: str = ".fits"):
     files = [f for f in os.listdir(path) if tag in f]
     mjd = []
     for file in files:

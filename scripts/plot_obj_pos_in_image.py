@@ -10,14 +10,14 @@ import numpy as np
 from tools import track_obj_over_images
 
 
-star_name = "BD+32 3739"
+star_name = "GRB 230818A"
 min, max = 59775, 60051
-experiment = "several positions in image/dense field"
+experiment = "all data"
 src_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
-    "Low polarized stars",
+    "Scientific objects",
     star_name,
     experiment,
     star_name,
