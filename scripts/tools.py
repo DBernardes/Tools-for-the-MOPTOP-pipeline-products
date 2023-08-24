@@ -152,7 +152,8 @@ def track_obj_over_images(
     files = sort_files(path, tag)
     xcoord, ycoord, mjds = np.array([]), np.array([]), np.array([])
     for file in files:
-        x, y, mjd = get_obj_coords(path, file)
+        file = os.path.join(path, file)
+        x, y, mjd = get_obj_coords(file)
         xcoord = np.append(xcoord, x)
         ycoord = np.append(ycoord, y)
         mjds = np.append(mjds, mjd)

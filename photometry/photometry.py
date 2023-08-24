@@ -13,7 +13,7 @@ from pandas import DataFrame
 class Photometry:
     """Photometry class"""
 
-    def __init__(self, file: str, objects: DataFrame, max_radius: int = 30) -> None:
+    def __init__(self, file: str, objects: DataFrame, max_radius: int = 10) -> None:
         """Initialize the class
 
         Parameters

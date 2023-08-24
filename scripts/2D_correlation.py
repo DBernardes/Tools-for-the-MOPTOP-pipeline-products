@@ -12,7 +12,7 @@ import pandas as pd
 from scipy import stats
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/dense field 2"
+experiment = "several positions in image/20230823"
 camera = 4
 alpha = 0.7
 fontsize = 9
