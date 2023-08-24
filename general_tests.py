@@ -1,48 +1,42 @@
-import os
-import pandas as pd
-from photometry import Photometry
-from scripts.tools import sort_files
-import astropy.io.fits as fits
 import matplotlib.pyplot as plt
+import pandas as pd
+import os
 import numpy as np
-from photometry import Photometry
 
 star_name = "GRB 230818A"
 experiment = "all data"
 src_path = os.path.join(
-    "..",
-    "Pol charact MOPTOP",
-    "Scientific objects",
-    star_name,
-    experiment,
-    star_name,
+    "..", "Pol charact MOPTOP", "Scientific objects", star_name, experiment
 )
+csv_path = os.path.join(src_path, "csv", "second set")
 
-GOOD_IMAGE = "3_e_20230818_5_16_2_1.fits"
-file = os.path.join(src_path, GOOD_IMAGE)
-image = fits.getdata(file)
-median = np.median(image)
-std = np.median(np.abs(image - median))
-plt.imshow(
-    image, vmax=median + 7 * std, vmin=median - 3 * std, origin="lower", cmap="gray"
-)
 
-objects = [
-    ("original", "19:03:33.2", "40:53:16.5"),
-    ("comparison_1", "19:03:44.77", "40:52:07.4"),
-    ("comparison_2", "19:03:42.6", "40:49:39"),
-    ("candidate_1", "19:03:32", "40:53:11"),
-    ("candidate_2", "19:03:33.39", "40:52:56.37"),
-    ("candidate_3", "19:03:31", "40:53:34"),
-]
+csv_file = os.path.join(csv_path, "original.csv")
+df = pd.read_csv(csv_file)
+original = df["star_photons"]
+csv_file = os.path.join(csv_path, "comparison_2.csv")
+df = pd.read_csv(csv_file)
+comp_1 = df["star_photons"]
+csv_file = os.path.join(csv_path, "comparison_2.csv")
+df = pd.read_csv(csv_file)
+comp_2 = df["star_photons"]
+csv_file = os.path.join(csv_path, "candidate_1.csv")
+df = pd.read_csv(csv_file)
+cand_1 = df["star_photons"]
+csv_file = os.path.join(csv_path, "candidate_2.csv")
+df = pd.read_csv(csv_file)
+cand_2 = df["star_photons"]
+csv_file = os.path.join(csv_path, "candidate_3.csv")
+df = pd.read_csv(csv_file)
+cand_3 = df["star_photons"]
 
-phot = Photometry(file, objects)
-for idx, _object in enumerate(phot.obj_list):
-    name, x, y, *_ = _object.get_info()
-    color = "b"
-    if name == "original":
-        color = "r"
-    plt.plot(x, y, f"{color}o", alpha=0.25)
-    plt.annotate(f"{idx+1}", (x * 0.99, y * 1.05), ha="right", va="bottom", fontsize=9)
+# comp = comp_2 + comp_1
+# cand_1 /= comp
+# # cand_1 /= np.median(cand_1)
+# cand_2 /= comp
+# # cand_2 /= np.median(cand_2)
+# cand_3 /= comp
+# # cand_3 /= np.median(cand_3)
 
+plt.plot(df["mjd"], comp_1, "bo", alpha=0.5)
 plt.show()

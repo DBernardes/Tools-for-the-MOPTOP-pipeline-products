@@ -7,29 +7,30 @@ from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 import astropy.units as u
 from dataclasses import dataclass
+from pandas import DataFrame
 
 
 class Photometry:
     """Photometry class"""
 
-    def __init__(self, file: str, objects: list[tuple], max_radius: int = 20) -> None:
+    def __init__(self, file: str, objects: DataFrame, max_radius: int = 30) -> None:
         """Initialize the class
 
         Parameters
         ----------
         file : str
             FITS file name.
-        objects: list
-            A list of tuples with the name, right ascension, and declination of the objects.
+        objects: DataFrame
+            A pandas Dataframe of tuples with the name, right ascension, and declination of the objects.
         max_radius: int
-            maximum radius, in pixels, in which the object can be found. Default to 20.
+            maximum radius, in pixels, in which the object can be found. Default to 30.
         """
         self.file = file
         self.max_radius = max_radius // 2
         self.image, self.header = fits.getdata(file, header=True)
         self.image_shape = self.image.shape
         self.obj_list = []
-        for _object in objects:
+        for _object in objects.itertuples(name=None, index=False):
             name, ra, dec = _object
             xcoord, ycoord = self._convert_coords_to_pixel(ra, dec)
             self.obj_list.append(Object(name, xcoord, ycoord))
@@ -102,20 +103,22 @@ class Photometry:
         float
             FWHM calculated for the object.
         """
-
         for idx, _object in enumerate(self.obj_list):
-            _, x, y, *_ = _object.get_info()
-            r = self.max_radius
-            img_data = self.image[y - r : y + r, x - r : x + r]
-            light_profile = np.take(img_data, r - 1, axis=0)
-            max_star_flux = np.max(img_data)
-            half_max = max_star_flux / 2
-            n = len(light_profile)
-            x = np.linspace(0, n, n)
-            spline = UnivariateSpline(x, light_profile - half_max, s=0)
-            r1, r2 = spline.roots()
-            fwhm = r2 - r1
-            self.obj_list[idx].psf_radius = 3 * fwhm
+            try:
+                _, x, y, *_ = _object.get_info()
+                r = self.max_radius
+                img_data = self.image[y - r : y + r, x - r : x + r]
+                light_profile = np.take(img_data, r - 1, axis=0)
+                max_star_flux = np.max(img_data)
+                half_max = max_star_flux / 2
+                n = len(light_profile)
+                x = np.linspace(0, n, n)
+                spline = UnivariateSpline(x, light_profile - half_max, s=0)
+                r1, r2 = spline.roots()
+                fwhm = r2 - r1
+                self.obj_list[idx].psf_radius = 3 * fwhm
+            except Exception:
+                continue
         return
 
     def _create_sky_mask(self, xcoord, ycoord, psf_radius):
