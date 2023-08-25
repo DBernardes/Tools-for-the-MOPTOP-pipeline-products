@@ -117,8 +117,15 @@ class Photometry:
                 n = len(light_profile)
                 x = np.linspace(0, n, n)
                 spline = UnivariateSpline(x, light_profile - half_max, s=0)
-                r1, r2 = spline.roots()
-                fwhm = r2 - r1
+                roots = spline.roots()
+
+                idx_max_val = np.argmax(spline(x))
+                tmp = np.abs(roots - idx_max_val)
+                idx_r_1 = np.argmin(tmp)
+                tmp[idx_r_1] = 1e10
+                idx_r_2 = np.argmin(tmp)
+
+                fwhm = roots[idx_r_2] - roots[idx_r_1]
                 self.obj_list[idx].psf_radius = 3 * fwhm
             except Exception:
                 continue

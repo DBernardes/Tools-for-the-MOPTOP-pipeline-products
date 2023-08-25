@@ -40,7 +40,7 @@ for obj_name in objects["name"]:
         "star_photons": [],
     }
 
-file = "3_e_20230818_5_20_12_1.fits"
+file = "3_e_20230818_5_3_1_1.fits"
 file_path = os.path.join(src_path, file)
 
 phot = Photometry(file_path, objects, 20)
