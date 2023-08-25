@@ -1,42 +1,54 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import os
+import pandas as pd
+from photometry import Photometry
+from scripts.tools import sort_files
+import astropy.io.fits as fits
+import matplotlib.pyplot as plt
 import numpy as np
+from photometry import Photometry
 
 star_name = "GRB 230818A"
 experiment = "all data"
+_set = "first"
+camera = 3
 src_path = os.path.join(
-    "..", "Pol charact MOPTOP", "Scientific objects", star_name, experiment
+    "..",
+    "Pol charact MOPTOP",
+    "Scientific objects",
+    star_name,
+    experiment,
+    star_name,
+    f"{_set} set",
 )
-csv_path = os.path.join(src_path, "csv", "second set")
 
 
-csv_file = os.path.join(csv_path, "original.csv")
+csv_file = os.path.join(src_path, "..", f"objects coordinates.csv")
 df = pd.read_csv(csv_file)
-original = df["star_photons"]
-csv_file = os.path.join(csv_path, "comparison_2.csv")
-df = pd.read_csv(csv_file)
-comp_1 = df["star_photons"]
-csv_file = os.path.join(csv_path, "comparison_2.csv")
-df = pd.read_csv(csv_file)
-comp_2 = df["star_photons"]
-csv_file = os.path.join(csv_path, "candidate_1.csv")
-df = pd.read_csv(csv_file)
-cand_1 = df["star_photons"]
-csv_file = os.path.join(csv_path, "candidate_2.csv")
-df = pd.read_csv(csv_file)
-cand_2 = df["star_photons"]
-csv_file = os.path.join(csv_path, "candidate_3.csv")
-df = pd.read_csv(csv_file)
-cand_3 = df["star_photons"]
+objects = {
+    "name": df["name"],
+    "ra": df[f"ra_{_set}_set_cam{camera}"],
+    "dec": df[f"dec_{_set}_set_cam{camera}"],
+}
+objects = pd.DataFrame.from_dict(objects)
 
-# comp = comp_2 + comp_1
-# cand_1 /= comp
-# # cand_1 /= np.median(cand_1)
-# cand_2 /= comp
-# # cand_2 /= np.median(cand_2)
-# cand_3 /= comp
-# # cand_3 /= np.median(cand_3)
+objects_photometry = {}
+for obj_name in objects["name"]:
+    objects_photometry[obj_name] = {
+        "mjd": [],
+        "xcoord": [],
+        "ycoord": [],
+        "star_photons": [],
+    }
 
-plt.plot(df["mjd"], comp_1, "bo", alpha=0.5)
-plt.show()
+file = "3_e_20230818_5_20_12_1.fits"
+file_path = os.path.join(src_path, file)
+
+phot = Photometry(file_path, objects, 20)
+phot.reset_object_coords()
+phot.calc_psf_radius()
+phot.calc_sky_photons()
+phot.calc_psf_photons()
+mjd = phot.get_mjd()
+
+for _object in phot.obj_list:
+    print(repr(_object))

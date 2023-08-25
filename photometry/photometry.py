@@ -8,6 +8,7 @@ from astropy.wcs import WCS
 import astropy.units as u
 from dataclasses import dataclass
 from pandas import DataFrame
+import matplotlib.pyplot as plt
 
 
 class Photometry:
@@ -108,6 +109,8 @@ class Photometry:
                 _, x, y, *_ = _object.get_info()
                 r = self.max_radius
                 img_data = self.image[y - r : y + r, x - r : x + r]
+                # plt.imshow(img_data)
+                # plt.show()
                 light_profile = np.take(img_data, r - 1, axis=0)
                 max_star_flux = np.max(img_data)
                 half_max = max_star_flux / 2
