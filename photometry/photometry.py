@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 class Photometry:
     """Photometry class"""
 
-    def __init__(self, file: str, objects: DataFrame, max_radius: int = 10) -> None:
+    def __init__(self, file: str, objects: DataFrame, max_size: int = 10) -> None:
         """Initialize the class
 
         Parameters
@@ -23,11 +23,11 @@ class Photometry:
             FITS file name.
         objects: DataFrame
             A pandas Dataframe of tuples with the name, right ascension, and declination of the objects.
-        max_radius: int
-            maximum radius, in pixels, in which the object can be found. Default to 30.
+        max_size: int
+            maximum size, in pixels, of the box in which the object can be found. Default to 30.
         """
         self.file = file
-        self.max_radius = max_radius // 2
+        self.max_radius = max_size // 2
         self.image, self.header = fits.getdata(file, header=True)
         self.image_shape = self.image.shape
         self.obj_list = []
@@ -124,8 +124,11 @@ class Photometry:
                 idx_r_1 = np.argmin(tmp)
                 tmp[idx_r_1] = 1e10
                 idx_r_2 = np.argmin(tmp)
+                # plt.plot(spline(x))
+                # print(roots[idx_r_2], roots[idx_r_1])
+                # plt.show()
 
-                fwhm = roots[idx_r_2] - roots[idx_r_1]
+                fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
                 self.obj_list[idx].psf_radius = 3 * fwhm
             except Exception:
                 continue

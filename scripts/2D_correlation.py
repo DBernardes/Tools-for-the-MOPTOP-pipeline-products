@@ -10,9 +10,10 @@ from tools import get_coords_in_series
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn import linear_model
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/20230823"
+experiment = "several positions in image/20230809"
 camera = 4
 alpha = 0.7
 fontsize = 9
@@ -21,60 +22,84 @@ base_path = os.path.join(
 )
 
 
-def calc_plot_parameters(df, x_str):
-    x = df[x_str]
-    q = df["q_avg"]
-    u = df["u_avg"]
-    q_err = df["q_err"]
-    u_err = df["u_err"]
-    res_q = stats.spearmanr(x, q)
-    res_u = stats.spearmanr(x, u)
-    return x, q, q_err, u, u_err, res_q, res_u
-
-
-for idx, filter in enumerate(["V"]):
-    new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
+def prepare_data(new_path, parameter, filter="V"):
     df = pd.read_csv(new_path)
     rows = df.loc[df["wave"] == f"MOP-{filter}"]
-    tmp = np.mean(rows["q_avg"] - rows["u_avg"])
     (
         x,
         y,
-        q,
-        u,
+        val,
     ) = (
         np.asanyarray(rows["x"]),
         np.asanyarray(rows["y"]),
-        np.asanyarray(rows["q_avg"]),
-        np.asanyarray(rows["u_avg"]),
+        np.asanyarray(rows[f"{parameter}_avg"]),
     )
-    res_q = stats.spearmanr((x, y), q, axis=1)
-    res_u = stats.spearmanr((x, y), u, axis=1)
-    coor_qx, coor_qy, _ = res_q.statistic[-1]
-    coor_ux, coor_uy, _ = res_u.statistic[-1]
-    pval_qx, pval_qy, _ = res_q.pvalue[-1]
-    pval_ux, pval_uy, _ = res_u.pvalue[-1]
+    return x, y, val
 
-    ax = plt.figure().add_subplot(projection="3d")
-    ax.plot(
-        x,
-        y,
-        q,
-        zdir="z",
-        c="b",
-        marker="o",
-        alpha=0.5,
-        label=f"q, corr:({coor_qx:.3f},{coor_qy:.3f}), pval:({pval_qx:.2e},{pval_qy:.2e})",
+
+def fit_plane(x, y, z):
+    x1, y1, z1 = x.flatten(), y.flatten(), z.flatten()
+    X_data = np.array([x1, y1]).reshape((-1, 2))
+    Y_data = z1
+    reg = linear_model.LinearRegression().fit(X_data, Y_data)
+    a, b = reg.coef_
+    c = reg.intercept_
+    X, Y = np.meshgrid(x, y)
+    Z = a * X + b * Y + c
+    return X, Y, Z
+
+
+def calc_spearman(x, y, val):
+    res = stats.spearmanr((x, y), val, axis=1)
+    coor_x, coor_y, _ = res.statistic[-1]
+    pval_x, pval_y, _ = res.pvalue[-1]
+
+    return (
+        res,
+        pval_x,
+        pval_y,
+        coor_x,
+        coor_y,
     )
+
+
+def plot_data(ax, x, y, val, coor_x, coor_y, pval_x, pval_y, parameter):
+    color = "b"
+    if parameter == "u":
+        color = "r"
     ax.plot(
         x,
         y,
-        u + tmp,
+        val,
         zdir="z",
-        c="r",
+        c=color,
         marker="o",
         alpha=0.5,
-        label=f"u+{tmp:.2f}, corr:({coor_ux:.3f},{coor_uy:.3f}), pval:({pval_ux:.2e},{pval_uy:.2e})",
+        label=f"q, corr:({coor_x:.3f},{coor_y:.3f}), pval:({pval_x:.2e},{pval_y:.2e})",
+    )
+
+
+fig = plt.figure(figsize=plt.figaspect(0.5))
+new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
+for idx, parameter in enumerate(["q", "u"]):
+    x, y, val = prepare_data(new_path, parameter)
+
+    (
+        res,
+        pval_x,
+        pval_y,
+        coor_x,
+        coor_y,
+    ) = calc_spearman(x, y, val)
+    ax = fig.add_subplot(1, 2, idx + 1, projection="3d")
+    plot_data(ax, x, y, val, coor_x, coor_y, pval_x, pval_y, parameter)
+    X, Y, Z = fit_plane(x, y, val)
+    ax.plot_surface(
+        X,
+        Y,
+        Z,
+        color=["b", "r"][idx],
+        alpha=0.1,
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")

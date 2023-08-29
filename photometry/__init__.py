@@ -1,1 +1,1 @@
-from .photometry import Photometry
+from .photometry import Photometry, Object

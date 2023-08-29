@@ -10,14 +10,14 @@ stepx = xsize // div
 stepy = ysize // div
 plate_scale = xsize / 420
 initial_stepx = (0.5 * xsize + stepx) / plate_scale
-initial_stepy = (0.5 * ysize + stepy) / plate_scale
+initial_stepy = (0.5 * ysize - stepy) / plate_scale
 
 fig, ax = plt.subplots()
 
 for y in range(stepy, ysize, sep * stepy):
-    for x in range(stepx, xsize, sep * stepx):
+    for x in range(-stepx, xsize + 2 * stepx, sep * stepx):
         ax.plot(x, y, "bo", alpha=0.5)
-        strx = (x - stepx) / plate_scale
+        strx = (x + stepx) / plate_scale
         stry = (y - stepy) / plate_scale
         ax.annotate(f"({strx:.2f},{stry:.2f})", (x, y + 30), fontsize=10, ha="center")
 
@@ -31,8 +31,8 @@ rect = patches.Rectangle(
     facecolor="none",
 )
 
-ax.set_title(f"Initial step: -{initial_stepx},-{initial_stepy}")
-# ax.add_patch(rect)
+ax.set_title(f"Initial step: -{initial_stepx:.2f},-{initial_stepy:.2f}")
+ax.add_patch(rect)
 plt.xlim(0, xsize)
 plt.ylim(0, ysize)
 plt.show()
