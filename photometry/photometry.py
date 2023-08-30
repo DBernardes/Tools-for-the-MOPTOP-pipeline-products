@@ -1,4 +1,7 @@
-# This is the photometry class
+#!/usr/bin/env python
+
+__author__ = "Denis Bernardes"
+__copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 import numpy as np
 import astropy.io.fits as fits
@@ -34,7 +37,7 @@ class Photometry:
         for _object in objects.itertuples(name=None, index=False):
             name, ra, dec = _object
             xcoord, ycoord = self._convert_coords_to_pixel(ra, dec)
-            self.obj_list.append(Object(name, xcoord, ycoord))
+            self.obj_list.append(Object(name, xcoord, ycoord, self.header["mjd"]))
         return
 
     def _convert_coords_to_pixel(
@@ -144,7 +147,7 @@ class Photometry:
     def calc_sky_photons(self):
         """Calculate the number of photons of the sky"""
         for idx, _object in enumerate(self.obj_list):
-            _, xcoord, ycoord, psf_radius, *_ = _object.get_info()
+            _, xcoord, ycoord, _, psf_radius, *_ = _object.get_info()
             mask = self._create_sky_mask(xcoord, ycoord, psf_radius)
             self.obj_list[idx].sky_photons = np.median(self.image[np.where(mask)])
 
@@ -158,31 +161,22 @@ class Photometry:
     def calc_psf_photons(self):
         """Calculate the number of photons of the object."""
         for idx, _object in enumerate(self.obj_list):
-            _, xcoord, ycoord, psf_radius, *_ = _object.get_info()
+            _, xcoord, ycoord, _, psf_radius, *_ = _object.get_info()
             mask = self._create_psf_mask(xcoord, ycoord, psf_radius)
             self.obj_list[idx].star_photons = np.sum(
                 self.image[np.where(mask)] - _object.sky_photons
             )
         return
 
-    def get_mjd(self) -> float:
-        """Get MJD of the image header
-
-        Returns
-        -------
-        float
-            Modified Julian Day (MJD)
-        """
-        return self.header["MJD"]
-
 
 @dataclass
 class Object:
-    """Class to keep the photometru information related to an astronomic object."""
+    """Class to keep the photometry information related to an astronomic object."""
 
     name: str
     xcoord: str
     ycoord: str
+    mjd: float
     psf_radius: float = 0
     sky_photons: float = 0
     star_photons: float = 0
@@ -192,6 +186,7 @@ class Object:
             self.name,
             self.xcoord,
             self.ycoord,
+            self.mjd,
             self.psf_radius,
             self.sky_photons,
             self.star_photons,
