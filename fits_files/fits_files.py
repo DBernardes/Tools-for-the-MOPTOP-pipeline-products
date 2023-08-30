@@ -30,7 +30,7 @@ class FITS_files_manager:
             hdr = fits.getheader(file_path)
             ffile = FITS_file(file, hdr["MJD"], hdr["RUNNUM"], hdr["EXPNUM"])
 
-            self.cam_files[f"cam{file[0]}"].append(ffile)
+            self.cam_files[f"cam{hdr['EXPID'][0]}"].append(ffile)
         self.cam_files["cam3"].sort()
         self.cam_files["cam4"].sort()
 

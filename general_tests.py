@@ -18,15 +18,17 @@ base_path = os.path.join(
     star_name,
     experiment,
     f"{_set} set",
-    "combined images",
+    star_name,
 )
 
-# ffiles = FITS_files_manager(base_path)
-# dest_path = os.path.join(base_path, "..", "combined images")
-# ffiles.combine_images_by_run(dest_path)
+ffiles = FITS_files_manager(base_path)
+dest_path = os.path.join(base_path, "..", "combined images")
+# for obj in ffiles.get_images_by_run(7)["cam4"]:
+#     print(obj)
 
+# -----------------------------------------------------------------
 
-camera = 3
+camera = 4
 csv_file = os.path.join(base_path, "..", f"objects coordinates.csv")
 df = pd.read_csv(csv_file)
 objects = {
@@ -36,12 +38,12 @@ objects = {
 }
 objects = pd.DataFrame.from_dict(objects)
 
-file_path = os.path.join(base_path, "cam3_run1.fits")
-phot = Photometry(file_path, objects, 20)
-phot.reset_object_coords()
-phot.calc_psf_radius()
-phot.calc_sky_photons()
-phot.calc_psf_photons()
-
-for obj in phot.obj_list:
-    print(obj)
+for name in ffiles.get_images_by_run(7)["cam4"]:
+    name = name.name
+    file_path = os.path.join(base_path, name)
+    phot = Photometry(file_path, objects, 20)
+    phot.reset_object_coords()
+    phot.calc_psf_radius()
+    phot.calc_sky_photons()
+    phot.calc_psf_photons()
+    print(phot.obj_list[2])
