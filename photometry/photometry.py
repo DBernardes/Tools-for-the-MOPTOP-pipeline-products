@@ -12,6 +12,7 @@ import astropy.units as u
 from dataclasses import dataclass
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+from math import sqrt
 
 
 class Photometry:
@@ -149,7 +150,8 @@ class Photometry:
         for idx, _object in enumerate(self.obj_list):
             _, xcoord, ycoord, _, psf_radius, *_ = _object.get_info()
             mask = self._create_sky_mask(xcoord, ycoord, psf_radius)
-            self.obj_list[idx].sky_photons = np.median(self.image[np.where(mask)])
+            sky = self.image[np.where(mask)]
+            self.obj_list[idx].sky_photons = np.median(sky)
 
     def _create_psf_mask(self, xcoord, ycoord, psf_radius):
         working_mask = np.ones(self.image_shape, bool)
@@ -161,10 +163,21 @@ class Photometry:
     def calc_psf_photons(self):
         """Calculate the number of photons of the object."""
         for idx, _object in enumerate(self.obj_list):
-            _, xcoord, ycoord, _, psf_radius, *_ = _object.get_info()
+            (
+                _,
+                xcoord,
+                ycoord,
+                _,
+                psf_radius,
+                sky_photons,
+                *_,
+            ) = _object.get_info()
             mask = self._create_psf_mask(xcoord, ycoord, psf_radius)
-            self.obj_list[idx].star_photons = np.sum(
-                self.image[np.where(mask)] - _object.sky_photons
+            star = self.image[np.where(mask)]
+            star_photons = np.sum(star - sky_photons)
+            self.obj_list[idx].star_photons = star_photons
+            self.obj_list[idx].star_err = np.sqrt(
+                star_photons + sky_photons * star.shape[0]
             )
         return
 
@@ -180,6 +193,7 @@ class Object:
     psf_radius: float = 0
     sky_photons: float = 0
     star_photons: float = 0
+    star_err: float = 0
 
     def get_info(self):
         return (
@@ -190,4 +204,5 @@ class Object:
             self.psf_radius,
             self.sky_photons,
             self.star_photons,
+            self.star_err,
         )

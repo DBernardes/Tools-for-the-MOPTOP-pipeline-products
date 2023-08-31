@@ -12,7 +12,7 @@ import collections
 
 
 class FITS_files_manager:
-    """This class is a facility to deal with groups of FITS files."""
+    """This class is a manager to deal with groups of FITS files."""
 
     def __init__(self, dir_path: str, file_name_tag: str = ".fits"):
         if not os.path.isdir(dir_path):

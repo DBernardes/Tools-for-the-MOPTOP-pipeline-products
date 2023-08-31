@@ -8,11 +8,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from tools import track_obj_over_images
-
+import matplotlib.patches as patches
 
 star_name = "BD+32 3739"
 min, max = 59775, 60051
-experiment = "several positions in image/20230823"
+experiment = "several positions in image/20230830"
 src_path = os.path.join(
     "..",
     "..",
@@ -44,7 +44,16 @@ for camera in [3, 4]:
 
         ax.axvline(512, color="r", linestyle="--", alpha=0.75)
         ax.axhline(512, color="r", linestyle="--", alpha=0.75)
-        ax.axvline(0, color="k", linestyle="--", alpha=0.75)
+        # Create a Rectangle patch
+        rect = patches.Rectangle(
+            (0, 0),
+            1024,
+            1024,
+            linewidth=1,
+            edgecolor="k",
+            facecolor="none",
+        )
+        ax.add_patch(rect)
         if camera == 3:
             ax.set_title(f"Filter {filter}")
         else:
