@@ -6,7 +6,6 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 import numpy as np
 import astropy.io.fits as fits
 from dataclasses import dataclass
-from pandas import DataFrame
 import os
 import collections
 
@@ -75,7 +74,7 @@ class FITS_files_manager:
                 file_name = os.path.join(dest_path, f"{cam}_run{run}.fits")
                 median = np.median(images, axis=0)
                 hdr["expnum"] = 0
-                fits.writeto(file_name, median, hdr)
+                fits.writeto(file_name, median, hdr, overwrite=True)
         return
 
 

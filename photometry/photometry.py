@@ -71,7 +71,94 @@ class Photometry:
         ycoord = int(y) + 1
         return xcoord, ycoord
 
+    def _calc_background_level(self, image: np.ndarray, nsigma: int = 5) -> float:
+        median = np.median(image)
+        std = np.median(np.abs(image - median))
+
+        indexes = np.where(
+            (median - nsigma * std < image) & (image < median + nsigma * std)
+        )
+        background_pixels = image[indexes]
+        median = np.median(background_pixels)
+        std = np.std(background_pixels)
+        self.background_level = median + nsigma * std
+        # print(self.background_level)
+
+    def _create_objects_maks(self, image):
+        working_mask = np.zeros(image.shape, bool)
+        y_coords, x_coords = np.where(image > self.background_level)
+        working_mask[(y_coords, x_coords)] = 1
+
+        for x, y in zip(x_coords, y_coords):
+            sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
+            if np.sum(sub_image) == 1:
+                working_mask[y, x] = 0
+        self.working_mask = working_mask
+
+        return
+
+    def _find_closest_object(self):
+        center_coord = self.working_mask.shape[0] // 2
+        y_coords, x_coords = np.where(self.working_mask == 1)
+        x_coords -= center_coord
+        y_coords -= center_coord
+        distances = np.sqrt(x_coords**2 + y_coords**2)
+        idx_min = np.argmin(distances)
+        closest_x = x_coords[idx_min] + center_coord
+        closest_y = y_coords[idx_min] + center_coord
+
+        return closest_x, closest_y
+
+    def _find_coords_max_pixel(self, closest_x, closest_y):
+        size = 10
+
+        image = self.image[
+            closest_y - size : closest_y + size, closest_x - size : closest_x + size
+        ]
+
+        self._calc_background_level(image)
+        working_mask = np.zeros(image.shape, bool)
+        y_coords, x_coords = np.where(image > self.background_level)
+        working_mask[(y_coords, x_coords)] = 1
+        for x, y in zip(x_coords, y_coords):
+            sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
+            if np.sum(sub_image) == 1:
+                working_mask[y, x] = 0
+
+        plt.imshow(working_mask)
+        plt.show()
+
+        if np.sum(working_mask) == 0:
+            max_value = np.max(image)
+        else:
+            max_value = np.max(image[working_mask])
+        new_y, new_x = np.where(image == max_value)
+        new_x = new_x[0] + closest_x - size
+        new_y = new_y[0] + closest_y - size
+        return new_x, new_y
+
     def reset_object_coords(self):
+        """Recalculate the object coordinates."""
+        for idx, _object in enumerate(self.obj_list):
+            _, x, y, *_ = _object.get_info()
+            size = self.max_radius
+            image = self.image[y - size : y + size, x - size : x + size]
+            self._calc_background_level(image)
+            self._create_objects_maks(image)
+            if np.sum(self.working_mask) == 0:
+                closest_x, closest_y = x, y
+            else:
+                closest_x, closest_y = self._find_closest_object()
+                closest_x += x - size
+                closest_y += y - size
+                # print(closest_x, closest_y, "\n")
+            new_x, new_y = self._find_coords_max_pixel(closest_x, closest_y)
+            new_x += 1
+            new_y += 1
+            self.obj_list[idx].xcoord, self.obj_list[idx].ycoord = new_x, new_y
+        return
+
+    def reset_object_coords_1(self):
         """Recalculate the object coordinates.
 
         Parameters
