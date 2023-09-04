@@ -71,7 +71,8 @@ class Photometry:
         ycoord = int(y) + 1
         return xcoord, ycoord
 
-    def _calc_background_level(self, image: np.ndarray, nsigma: int = 5) -> float:
+    @staticmethod
+    def _calc_background_level(image: np.ndarray, nsigma: int = 5) -> float:
         median = np.median(image)
         std = np.median(np.abs(image - median))
 
@@ -81,25 +82,29 @@ class Photometry:
         background_pixels = image[indexes]
         median = np.median(background_pixels)
         std = np.std(background_pixels)
-        self.background_level = median + nsigma * std
-        # print(self.background_level)
+        background_level = median + nsigma * std
+        return background_level
 
-    def _create_objects_maks(self, image):
+    @staticmethod
+    def _create_objects_maks(image, background_level: float) -> np.ndarray:
         working_mask = np.zeros(image.shape, bool)
-        y_coords, x_coords = np.where(image > self.background_level)
+        y_coords, x_coords = np.where(image > background_level)
         working_mask[(y_coords, x_coords)] = 1
 
         for x, y in zip(x_coords, y_coords):
             sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
-            if np.sum(sub_image) == 1:
+            if np.sum(sub_image) <= 1:
                 working_mask[y, x] = 0
-        self.working_mask = working_mask
 
-        return
+        # plt.imshow(working_mask, origin="lower")
+        # plt.show()
 
-    def _find_closest_object(self):
-        center_coord = self.working_mask.shape[0] // 2
-        y_coords, x_coords = np.where(self.working_mask == 1)
+        return working_mask
+
+    @staticmethod
+    def _find_closest_object(working_mask: np.ndarray):
+        center_coord = working_mask.shape[0] // 2
+        y_coords, x_coords = np.where(working_mask == 1)
         x_coords -= center_coord
         y_coords -= center_coord
         distances = np.sqrt(x_coords**2 + y_coords**2)
@@ -116,22 +121,15 @@ class Photometry:
             closest_y - size : closest_y + size, closest_x - size : closest_x + size
         ]
 
-        self._calc_background_level(image)
-        working_mask = np.zeros(image.shape, bool)
-        y_coords, x_coords = np.where(image > self.background_level)
-        working_mask[(y_coords, x_coords)] = 1
-        for x, y in zip(x_coords, y_coords):
-            sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
-            if np.sum(sub_image) == 1:
-                working_mask[y, x] = 0
+        background_level = self._calc_background_level(image)
+        working_mask = self._create_objects_maks(image, background_level)
+        # plt.imshow(working_mask, origin="lower")
+        # plt.show()
 
-        plt.imshow(working_mask)
-        plt.show()
-
-        if np.sum(working_mask) == 0:
-            max_value = np.max(image)
-        else:
+        max_value = np.max(image)
+        if np.sum(working_mask) > 0:
             max_value = np.max(image[working_mask])
+
         new_y, new_x = np.where(image == max_value)
         new_x = new_x[0] + closest_x - size
         new_y = new_y[0] + closest_y - size
@@ -143,43 +141,18 @@ class Photometry:
             _, x, y, *_ = _object.get_info()
             size = self.max_radius
             image = self.image[y - size : y + size, x - size : x + size]
-            self._calc_background_level(image)
-            self._create_objects_maks(image)
-            if np.sum(self.working_mask) == 0:
-                closest_x, closest_y = x, y
-            else:
-                closest_x, closest_y = self._find_closest_object()
+            background_level = self._calc_background_level(image)
+            working_mask = self._create_objects_maks(image, background_level)
+            closest_x, closest_y = x, y
+            if np.sum(working_mask) > 0:
+                closest_x, closest_y = self._find_closest_object(working_mask)
                 closest_x += x - size
                 closest_y += y - size
-                # print(closest_x, closest_y, "\n")
+
             new_x, new_y = self._find_coords_max_pixel(closest_x, closest_y)
             new_x += 1
             new_y += 1
             self.obj_list[idx].xcoord, self.obj_list[idx].ycoord = new_x, new_y
-        return
-
-    def reset_object_coords_1(self):
-        """Recalculate the object coordinates.
-
-        Parameters
-        ----------
-        size : int, optional
-            size of the box in which the object will be evaluated, by default 20.
-
-        Returns
-        -------
-        tuple[int, int]
-            x and y coordinates of the pixel.
-        """
-        for idx, _object in enumerate(self.obj_list):
-            _, x, y, *_ = _object.get_info()
-            size = self.max_radius
-            image = self.image[y - size : y + size, x - size : x + size]
-            max_value = np.max(image)
-            new_y, new_x = np.where(image == max_value)
-            new_x += 1 + x - size
-            new_y += 1 + y - size
-            self.obj_list[idx].xcoord, self.obj_list[idx].ycoord = new_x[0], new_y[0]
         return
 
     def calc_psf_radius(self):
@@ -196,33 +169,33 @@ class Photometry:
             FWHM calculated for the object.
         """
         for idx, _object in enumerate(self.obj_list):
-            try:
-                _, x, y, *_ = _object.get_info()
-                r = self.max_radius
-                img_data = self.image[y - r : y + r, x - r : x + r]
-                # plt.imshow(img_data)
-                # plt.show()
-                light_profile = np.take(img_data, r - 1, axis=0)
-                max_star_flux = np.max(img_data)
-                half_max = max_star_flux / 2
-                n = len(light_profile)
-                x = np.linspace(0, n, n)
-                spline = UnivariateSpline(x, light_profile - half_max, s=0)
-                roots = spline.roots()
+            _, x, y, *_ = _object.get_info()
+            r = self.max_radius
+            img_data = self.image[y - r : y + r, x - r : x + r]
+            # plt.imshow(img_data)
+            # plt.show()
+            light_profile = np.take(img_data, r - 1, axis=0)
+            half_max = np.max(light_profile) / 2
+            n = len(light_profile)
+            x = np.linspace(0, n - 1, n)
+            spline = UnivariateSpline(x, light_profile - half_max, s=None)
+            roots = spline.roots()
+            # plt.plot(spline(x))
+            # plt.show()
 
-                idx_max_val = np.argmax(spline(x))
-                tmp = np.abs(roots - idx_max_val)
-                idx_r_1 = np.argmin(tmp)
-                tmp[idx_r_1] = 1e10
-                idx_r_2 = np.argmin(tmp)
-                # plt.plot(spline(x))
-                # print(roots[idx_r_2], roots[idx_r_1])
-                # plt.show()
+            idx_max_val = np.argmax(spline(x))
+            tmp = np.abs(roots - idx_max_val)
+            idx_r_1 = np.argmin(tmp)
+            tmp[idx_r_1] = 1e10
+            idx_r_2 = np.argmin(tmp)
+            # plt.plot(spline(x))
+            # plt.plot(roots[idx_r_2], 0, "bo")
+            # plt.plot(roots[idx_r_1], 0, "bo")
+            # plt.show()
 
-                fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
-                self.obj_list[idx].psf_radius = 3 * fwhm
-            except Exception:
-                continue
+            fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
+            self.obj_list[idx].psf_radius = 3 * fwhm
+
         return
 
     def _create_sky_mask(self, xcoord, ycoord, psf_radius):
