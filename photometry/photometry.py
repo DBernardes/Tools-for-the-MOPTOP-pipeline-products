@@ -172,16 +172,13 @@ class Photometry:
             _, x, y, *_ = _object.get_info()
             r = self.max_radius
             img_data = self.image[y - r : y + r, x - r : x + r]
-            # plt.imshow(img_data)
-            # plt.show()
+
             light_profile = np.take(img_data, r - 1, axis=0)
             half_max = np.max(light_profile) / 2
             n = len(light_profile)
             x = np.linspace(0, n - 1, n)
             spline = UnivariateSpline(x, light_profile - half_max, s=None)
             roots = spline.roots()
-            # plt.plot(spline(x))
-            # plt.show()
 
             idx_max_val = np.argmax(spline(x))
             tmp = np.abs(roots - idx_max_val)
