@@ -11,14 +11,16 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-star_name = "BD+32 3739"
+star_name = "GRB 230818A"
+experiment = "all data/all data"
 
 base_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
-    "Low polarized stars",
+    "Scientific objects",
     star_name,
+    experiment,
     "reduced",
     star_name,
 )
@@ -31,7 +33,7 @@ for filter in pol_dict.keys():
     plt.errorbar(mjd, pol, yerr=err, fmt="o", label=f"filter {filter}", alpha=0.5)
 
 plt.axhline(
-    low_polarized_stars[star_name], color="r", linestyle="--", label="Literature"
+    high_polarized_stars[star_name], color="r", linestyle="--", label="Literature"
 )
 plt.xlabel("Time (MJD)")
 plt.ylabel("Polarization (%)")

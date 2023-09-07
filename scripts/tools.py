@@ -35,6 +35,7 @@ high_polarized_stars = {
     "VICyg12": 0,
     "HD155197": 0,
     "HILT960": 0,
+    "GRB 230818A": 0,
 }
 # https://www.not.iac.es/instruments/turpol/std/hpstd.html
 LIMIT_MJD = 59774

@@ -12,11 +12,15 @@ import astropy.units as u
 from dataclasses import dataclass
 from pandas import DataFrame
 import matplotlib.pyplot as plt
-from math import sqrt
+from math import sqrt, log10, log2
+from sbpy.calib import vega_fluxd
+from scipy.constants import h, c
 
 
 class Photometry:
     """Photometry class"""
+
+    LT_EFFECTIVE_AREA = 2.982  # m2
 
     def __init__(self, file: str, objects: DataFrame, max_size: int = 10) -> None:
         """Initialize the class
@@ -33,6 +37,7 @@ class Photometry:
         self.file = file
         self.max_radius = max_size // 2
         self.image, self.header = fits.getdata(file, header=True)
+        self.image *= self.header["GAIN"]  # TODO: is this right?
         self.image_shape = self.image.shape
         self.obj_list = []
         for _object in objects.itertuples(name=None, index=False):
@@ -172,6 +177,8 @@ class Photometry:
             _, x, y, *_ = _object.get_info()
             r = self.max_radius
             img_data = self.image[y - r : y + r, x - r : x + r]
+            # plt.imshow(img_data)
+            # plt.show()
 
             light_profile = np.take(img_data, r - 1, axis=0)
             half_max = np.max(light_profile) / 2
@@ -238,6 +245,31 @@ class Photometry:
             )
         return
 
+    def calc_magnitude(self):
+        """Calculate the magnitude of the star"""
+        _filter = self.header["FILTER1"][-1]
+        vega = vega_fluxd.get()
+        keyword_str = "Johnson"
+        if _filter not in ["U", "B", "V"]:
+            keyword_str = "Cousins"
+
+        eff_lambda = vega[f"{keyword_str} {_filter}(lambda eff)"].value * 1e-6
+        photon_energy = h * c / eff_lambda
+        vega_photons = (
+            vega[f"{keyword_str} {_filter}"].value
+            * 1e7
+            * self.LT_EFFECTIVE_AREA
+            * eff_lambda
+            * self.header["EXPTIME"]
+            / photon_energy
+        )
+
+        for idx, _object in enumerate(self.obj_list):
+            mag_err = 2.5 * _object.star_err / (_object.star_photons * log2(10))
+            mag = -2.5 * log10(_object.star_photons / vega_photons)
+            self.obj_list[idx].star_mag = mag
+            self.obj_list[idx].star_mag_err = mag_err
+
 
 @dataclass
 class Object:
@@ -251,6 +283,8 @@ class Object:
     sky_photons: float = 0
     star_photons: float = 0
     star_err: float = 0
+    star_mag: float = 0
+    star_mag_err: float = 0
 
     def get_info(self):
         return (
