@@ -20,8 +20,6 @@ from scipy.constants import h, c
 class Photometry:
     """Photometry class"""
 
-    LT_EFFECTIVE_AREA = 2.982  # m2
-
     def __init__(self, file: str, objects: DataFrame, max_size: int = 10) -> None:
         """Initialize the class
 
@@ -77,7 +75,7 @@ class Photometry:
         return xcoord, ycoord
 
     @staticmethod
-    def _calc_background_level(image: np.ndarray, nsigma: int = 5) -> float:
+    def _calc_background_level(image: np.ndarray, nsigma: int = 4) -> float:
         median = np.median(image)
         std = np.median(np.abs(image - median))
 
@@ -128,12 +126,13 @@ class Photometry:
 
         background_level = self._calc_background_level(image)
         working_mask = self._create_objects_maks(image, background_level)
-        # plt.imshow(working_mask, origin="lower")
-        # plt.show()
 
         max_value = np.max(image)
         if np.sum(working_mask) > 0:
             max_value = np.max(image[working_mask])
+
+        # plt.imshow(working_mask, origin="lower")
+        # plt.show()
 
         new_y, new_x = np.where(image == max_value)
         new_x = new_x[0] + closest_x - size
@@ -143,9 +142,12 @@ class Photometry:
     def reset_object_coords(self):
         """Recalculate the object coordinates."""
         for idx, _object in enumerate(self.obj_list):
-            _, x, y, *_ = _object.get_info()
+            x, y = _object.xcoord, _object.ycoord
             size = self.max_radius
             image = self.image[y - size : y + size, x - size : x + size]
+            # plt.imshow(image, origin="lower")
+            # plt.show()
+
             background_level = self._calc_background_level(image)
             working_mask = self._create_objects_maks(image, background_level)
             closest_x, closest_y = x, y
@@ -174,10 +176,10 @@ class Photometry:
             FWHM calculated for the object.
         """
         for idx, _object in enumerate(self.obj_list):
-            _, x, y, *_ = _object.get_info()
+            x, y = _object.xcoord, _object.ycoord
             r = self.max_radius
             img_data = self.image[y - r : y + r, x - r : x + r]
-            # plt.imshow(img_data)
+            # plt.imshow(img_data, origin="lower")
             # plt.show()
 
             light_profile = np.take(img_data, r - 1, axis=0)
@@ -212,8 +214,9 @@ class Photometry:
     def calc_sky_photons(self):
         """Calculate the number of photons of the sky"""
         for idx, _object in enumerate(self.obj_list):
-            _, xcoord, ycoord, _, psf_radius, *_ = _object.get_info()
-            mask = self._create_sky_mask(xcoord, ycoord, psf_radius)
+            mask = self._create_sky_mask(
+                _object.xcoord, _object.ycoord, _object.psf_radius
+            )
             sky = self.image[np.where(mask)]
             self.obj_list[idx].sky_photons = np.median(sky)
 
@@ -227,48 +230,24 @@ class Photometry:
     def calc_psf_photons(self):
         """Calculate the number of photons of the object."""
         for idx, _object in enumerate(self.obj_list):
-            (
-                _,
-                xcoord,
-                ycoord,
-                _,
-                psf_radius,
-                sky_photons,
-                *_,
-            ) = _object.get_info()
-            mask = self._create_psf_mask(xcoord, ycoord, psf_radius)
+            mask = self._create_psf_mask(
+                _object.xcoord, _object.ycoord, _object.psf_radius
+            )
             star = self.image[np.where(mask)]
-            star_photons = np.sum(star - sky_photons)
+            star_photons = np.sum(star - _object.sky_photons)
+            if star_photons <= 0:
+                star_photons = 0.1
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
-                star_photons + sky_photons * star.shape[0]
+                star_photons + _object.sky_photons * star.shape[0]
             )
         return
 
     def calc_magnitude(self):
-        """Calculate the magnitude of the star"""
-        _filter = self.header["FILTER1"][-1]
-        vega = vega_fluxd.get()
-        keyword_str = "Johnson"
-        if _filter not in ["U", "B", "V"]:
-            keyword_str = "Cousins"
-
-        eff_lambda = vega[f"{keyword_str} {_filter}(lambda eff)"].value * 1e-6
-        photon_energy = h * c / eff_lambda
-        vega_photons = (
-            vega[f"{keyword_str} {_filter}"].value
-            * 1e7
-            * self.LT_EFFECTIVE_AREA
-            * eff_lambda
-            * self.header["EXPTIME"]
-            / photon_energy
-        )
-
-        for idx, _object in enumerate(self.obj_list):
-            mag_err = 2.5 * _object.star_err / (_object.star_photons * log2(10))
-            mag = -2.5 * log10(_object.star_photons / vega_photons)
-            self.obj_list[idx].star_mag = mag
-            self.obj_list[idx].star_mag_err = mag_err
+        """Calculate the magnitude for each object in the list"""
+        for obj in self.obj_list:
+            _filter, exptime = self.header["FILTER1"][-1], self.header["EXPTIME"]
+            obj.calc_magnitude(_filter, exptime)
 
 
 @dataclass
@@ -286,14 +265,34 @@ class Object:
     star_mag: float = 0
     star_mag_err: float = 0
 
-    def get_info(self):
-        return (
-            self.name,
-            self.xcoord,
-            self.ycoord,
-            self.mjd,
-            self.psf_radius,
-            self.sky_photons,
-            self.star_photons,
-            self.star_err,
+    _VEGA = vega_fluxd.get()
+    _LT_EFFECTIVE_AREA = 2.982  # m2
+
+    def calc_magnitude(self, _filter: str, exp_time: float):
+        """Calculate the object magnitude
+
+        Parameters
+        ----------
+        _filter : str
+            UBVRI filter used in observation.
+        exp_time : float
+            Exposure time
+        """
+
+        keyword_str = "Johnson"
+        if _filter not in ["U", "B", "V"]:
+            keyword_str = "Cousins"
+
+        eff_lambda = self._VEGA[f"{keyword_str} {_filter}(lambda eff)"].value * 1e-6
+        photon_energy = h * c / eff_lambda
+        vega_photons = (
+            self._VEGA[f"{keyword_str} {_filter}"].value
+            * 1e7
+            * self._LT_EFFECTIVE_AREA
+            * eff_lambda
+            * exp_time
+            / photon_energy
         )
+
+        self.star_mag_err = 2.5 * self.star_err / (self.star_photons * log2(10))
+        self.star_mag = -2.5 * log10(self.star_photons / vega_photons)

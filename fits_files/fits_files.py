@@ -8,6 +8,8 @@ import astropy.io.fits as fits
 from dataclasses import dataclass
 import os
 import collections
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 class FITS_files_manager:
@@ -53,7 +55,7 @@ class FITS_files_manager:
             ]
         return current_run
 
-    def combine_images_by_run(self, dest_path: str):
+    def combine_images_by_run(self, dest_path: str, shifts_file: str = ""):
         """Combine a set of images of the same run.
 
         Parameters
@@ -67,15 +69,48 @@ class FITS_files_manager:
             current_run = self.get_images_by_run(run)
             for cam, ffiles in current_run.items():
                 images = []
-                for ffile in ffiles:
+                shifts = self._get_shifts(run, shifts_file)
+                for idx, ffile in enumerate(ffiles):
                     file_name = os.path.join(self.dir_path, ffile.name)
                     data, hdr = fits.getdata(file_name, header=True)
+                    if shifts_file != "":
+                        x_shift, y_shift = (
+                            shifts[f"{cam}_x"][idx],
+                            shifts[f"{cam}_y"][idx],
+                        )
+                        data = self._shift_image(data, x_shift, y_shift)
                     images.append(data)
-                file_name = os.path.join(dest_path, f"{cam}_run{run}.fits")
+                file_name = os.path.join(dest_path, f"{cam[-1]}_e_run{run}.fits")
                 median = np.median(images, axis=0)
                 hdr["expnum"] = 0
                 fits.writeto(file_name, median, hdr, overwrite=True)
         return
+
+    @staticmethod
+    def _get_shifts(run, shifts_file):
+        if shifts_file == "":
+            return []
+        else:
+            df = pd.read_csv(shifts_file)
+            rows = df.loc[df["run_num"] == run]
+            shifts = {}
+            for name, *val in rows.transpose().itertuples(name=None):
+                shifts[name] = np.asarray(val)
+
+            shifts["cam3_x"] -= shifts["cam3_x"][0]
+            shifts["cam3_y"] -= shifts["cam3_y"][0]
+            shifts["cam4_x"] -= shifts["cam4_x"][0]
+            shifts["cam4_y"] -= shifts["cam4_y"][0]
+            return shifts
+
+    @staticmethod
+    def _shift_image(image, x_shift, y_shift):
+        xsize, ysize = image.shape
+        x, y = xsize // 2 + x_shift, ysize // 2 + y_shift
+
+        image = image[y - 500 : y + 500 + 1, x - 500 : x + 500 + 1]
+
+        return image
 
 
 @dataclass
