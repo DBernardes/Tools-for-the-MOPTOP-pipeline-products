@@ -107,10 +107,11 @@ class FITS_files_manager:
 
     @staticmethod
     def _shift_image(image, x_shift, y_shift):
+        # TODO: implement the variable new_size
         xsize, ysize = image.shape
         x, y = xsize // 2 + x_shift, ysize // 2 + y_shift
-
-        image = image[y - 500 : y + 500 + 1, x - 500 : x + 500 + 1]
+        new_size = 480
+        image = image[y - new_size : y + new_size + 1, x - new_size : x + new_size + 1]
 
         return image
 

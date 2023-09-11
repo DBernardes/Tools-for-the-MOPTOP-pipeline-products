@@ -35,7 +35,7 @@ class Photometry:
         self.file = file
         self.max_radius = max_size // 2
         self.image, self.header = fits.getdata(file, header=True)
-        self.image *= self.header["GAIN"]  # TODO: is this right?
+        self.image *= self.header["GAIN"]  # ? is this right
         self.image_shape = self.image.shape
         self.obj_list = []
         for _object in objects.itertuples(name=None, index=False):
@@ -242,7 +242,7 @@ class Photometry:
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
                 star_photons + _object.sky_photons * star.shape[0]
-            )
+            )  # TODO: add the read noise error
         return
 
     def calc_magnitude(self):
