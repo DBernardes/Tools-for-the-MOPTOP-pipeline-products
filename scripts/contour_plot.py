@@ -13,7 +13,7 @@ from scipy import stats
 from sklearn import linear_model
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/20230830"
+experiment = "several positions in image/20230910"
 camera = 4
 alpha = 0.7
 fontsize = 9
@@ -24,8 +24,8 @@ base_path = os.path.join(
 
 def prepare_data(new_path, parameter, filter="V"):
     df = pd.read_csv(new_path)
-    rows = df.loc[df["wave"] == f"{filter}"]
-    # rows = rows.sort_values(["x", "y"], axis=0)
+    rows = df.loc[df["wave"] == f"MOP-{filter}"]
+    rows = rows.sort_values(["x", "y"], axis=0)
 
     x = np.asanyarray(rows["x"]).reshape(4, 4)
     y = np.asanyarray(rows["y"]).reshape(4, 4)
@@ -86,7 +86,7 @@ new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 fig, axs = plt.subplots(1, 2)
 for idx, parameter in enumerate(["q", "u"]):
     ax = axs[idx]
-    x, y, val = prepare_data(new_path, parameter)
+    x, y, val = prepare_data(new_path, parameter, "I")
     plot_data(ax, x, y, val)
 
 

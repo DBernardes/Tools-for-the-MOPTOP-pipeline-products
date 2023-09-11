@@ -13,7 +13,7 @@ from scipy import stats
 from sklearn import linear_model
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/20230830"
+experiment = "several positions in image/20230910"
 camera = 4
 alpha = 0.7
 fontsize = 9
@@ -25,17 +25,14 @@ base_path = os.path.join(
 def prepare_data(new_path, parameter, filter="V"):
     df = pd.read_csv(new_path)
     rows = df.loc[df["wave"] == f"MOP-{filter}"]
-    (
-        x,
-        y,
-        val,
-    ) = (
+    (x, y, val, val_err) = (
         np.asanyarray(rows["x"]),
         np.asanyarray(rows["y"]),
         np.asanyarray(rows[f"{parameter}_avg"]),
+        np.asanyarray(rows[f"{parameter}_err"]),
     )
 
-    return x, y, val
+    return x, y, val, val_err
 
 
 def fit_plane(x, y, z):
@@ -64,26 +61,26 @@ def calc_spearman(x, y, val):
     )
 
 
-def plot_data(ax, x, y, val, coor_x, coor_y, pval_x, pval_y, parameter):
+def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter):
     color = "b"
     if parameter == "u":
         color = "r"
-    ax.plot(
+    ax.errorbar(
         x,
         y,
         val,
-        zdir="z",
-        c=color,
+        val_err,
+        color=color,
         marker="o",
         alpha=0.5,
-        label=f"q, corr:({coor_x:.3f},{coor_y:.3f}), pval:({pval_x:.2e},{pval_y:.2e})",
+        label=f"{parameter}, corr:({coor_x:.3f},{coor_y:.3f}), pval:({pval_x:.2e},{pval_y:.2e})",
     )
 
 
 fig = plt.figure(figsize=plt.figaspect(0.5))
 new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
-    x, y, val = prepare_data(new_path, parameter)
+    x, y, val, val_err = prepare_data(new_path, parameter, "I")
 
     (
         res,
@@ -93,7 +90,7 @@ for idx, parameter in enumerate(["q", "u"]):
         coor_y,
     ) = calc_spearman(x, y, val)
     ax = fig.add_subplot(1, 2, idx + 1, projection="3d")
-    plot_data(ax, x, y, val, coor_x, coor_y, pval_x, pval_y, parameter)
+    plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
     X, Y, Z = fit_plane(x, y, val)
     ax.plot_surface(
         X,

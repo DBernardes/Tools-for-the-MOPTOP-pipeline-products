@@ -10,14 +10,13 @@ import numpy as np
 from tools import track_obj_over_images
 import matplotlib.patches as patches
 
-star_name = "GRB 230818A"
-min, max = 59775, 60051
-experiment = "all data"
+star_name = "BD+32 3739"
+experiment = "several positions in image/20230910"
 src_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
-    "Scientific objects",
+    "Low polarized stars",
     star_name,
     experiment,
     star_name,
@@ -34,13 +33,6 @@ for camera in [3, 4]:
         ax.plot(xcoord, ycoord, "o-", alpha=0.8)
 
         medx, medy = np.median(xcoord), np.median(ycoord)
-        # ax.plot(medx, medy, "*k")
-        # ax.annotate(
-        #     f"({medx:.0f}, {medy:.0f})",
-        #     (medx * 1.1, medy * 1.1),
-        #     fontsize=10,
-        #     ha="left",
-        # )
 
         ax.axvline(512, color="r", linestyle="--", alpha=0.75)
         ax.axhline(512, color="r", linestyle="--", alpha=0.75)

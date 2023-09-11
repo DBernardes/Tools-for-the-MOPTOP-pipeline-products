@@ -9,13 +9,13 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 from tools import manipulate_csv_file
 import os
 
-star_name = "GRB 230818A"
-experiment = "all data/all data"
+star_name = "BD+32 3739"
+experiment = "several positions in image/20230910"
 base_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
-    "Scientific objects",
+    "Low polarized stars",
     star_name,
     experiment,
     "reduced",

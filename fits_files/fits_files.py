@@ -79,6 +79,8 @@ class FITS_files_manager:
                             shifts[f"{cam}_y"][idx],
                         )
                         data = self._shift_image(data, x_shift, y_shift)
+                        # file_name = os.path.join(dest_path, f"{ffile.name}")
+                        # fits.writeto(file_name, data, hdr, overwrite=True)
                     images.append(data)
                 file_name = os.path.join(dest_path, f"{cam[-1]}_e_run{run}.fits")
                 median = np.median(images, axis=0)

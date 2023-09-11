@@ -236,7 +236,9 @@ class Photometry:
             star = self.image[np.where(mask)]
             star_photons = np.sum(star - _object.sky_photons)
             if star_photons <= 0:
-                star_photons = 0.1
+                raise ValueError(
+                    f"\nThe calculated number for the photons of the star is smaller than or equal to zero: {star_photons}."
+                )
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
                 star_photons + _object.sky_photons * star.shape[0]
