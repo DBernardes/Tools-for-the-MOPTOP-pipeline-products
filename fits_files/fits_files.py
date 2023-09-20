@@ -10,6 +10,7 @@ import os
 import collections
 import pandas as pd
 import matplotlib.pyplot as plt
+from sys import exit
 
 
 class FITS_files_manager:
@@ -55,6 +56,26 @@ class FITS_files_manager:
             ]
         return current_run
 
+    def get_images_by_rotor_position(self, rpos: int) -> list:
+        """Get set of images by the rotor positions.
+
+        Parameters
+        ----------
+        rpos : int
+            current rotor position.
+
+        Returns
+        -------
+        list
+            list of FITS_file objects.
+        """
+        current_rpos = {}
+        for cam in [3, 4]:
+            current_rpos[f"cam{cam}"] = [
+                obj for obj in self.cam_files[f"cam{cam}"] if obj.rot_pos == rpos
+            ]
+        return current_rpos
+
     def combine_images_by_run(self, dest_path: str, shifts_file: str = ""):
         """Combine a set of images of the same run.
 
@@ -69,7 +90,7 @@ class FITS_files_manager:
             current_run = self.get_images_by_run(run)
             for cam, ffiles in current_run.items():
                 images = []
-                shifts = self._get_shifts(run, shifts_file)
+                shifts = self._get_shifts(run, shifts_file, "run_num")
                 for idx, ffile in enumerate(ffiles):
                     file_name = os.path.join(self.dir_path, ffile.name)
                     data, hdr = fits.getdata(file_name, header=True)
@@ -88,13 +109,66 @@ class FITS_files_manager:
                 fits.writeto(file_name, median, hdr, overwrite=True)
         return
 
+    def combine_images_by_rotor_position(
+        self, dest_path: str, shifts_file="", nruns=None, use_moptp_name=False
+    ):
+        """Combine a set of images of the same rotor position.
+
+        Parameters
+        ----------
+        dest_path : str
+            destination path
+
+        shifts_file : str, optional
+            path of the shifts file. The default is "".
+
+        nruns : int, optional
+            Number of runs to be combined. The default is None.
+
+        use_moptp_name : bool, optional
+            If True, use the MOPTOP name for the images. The default is False.
+        """
+        rpos_numbers = [obj.rot_pos for obj in self.cam_files["cam3"]]
+        counter = collections.Counter(rpos_numbers).items()
+        imgs_per_rotor_position = [pos for _, pos in counter]
+        if sum(imgs_per_rotor_position) % 16 != 0:
+            raise ValueError(
+                "There are not the same number of images per rotor position."
+            )
+        rotor_positions = [pos for pos, _ in counter]
+        for rpos in rotor_positions:
+            current_rpos = self.get_images_by_rotor_position(rpos)
+            for cam, ffiles in current_rpos.items():
+                images = []
+                shifts = self._get_shifts(rpos, shifts_file, "exp_num")
+
+                for idx1, _tuple in enumerate(zip(*[iter(ffiles)] * nruns)):
+                    for idx2, ffile in enumerate(_tuple):
+                        idx = idx2 + idx1 * nruns
+                        file_name = os.path.join(self.dir_path, ffile.name)
+                        data, hdr = fits.getdata(file_name, header=True)
+                        if shifts_file != "":
+                            x_shift, y_shift = (
+                                shifts[f"{cam}_x"][idx],
+                                shifts[f"{cam}_y"][idx],
+                            )
+                            data = self._shift_image(data, x_shift, y_shift)
+                        images.append(data)
+                    file_name = f"{cam[-1]}_e_rpos{rpos}_{idx+1}.fits"
+                    if use_moptp_name:
+                        file_name = hdr["EXPID"][:-1] + "1.fits"
+                    file_name = os.path.join(dest_path, file_name)
+                    median = np.median(images, axis=0)
+                    hdr["runnum"] = 0
+                    fits.writeto(file_name, median, hdr, overwrite=True)
+
     @staticmethod
-    def _get_shifts(run, shifts_file):
+    def _get_shifts(run, shifts_file, parameter):
         if shifts_file == "":
             return []
         else:
             df = pd.read_csv(shifts_file)
-            rows = df.loc[df["run_num"] == run]
+            rows = df.loc[df[parameter] == run]
             shifts = {}
             for name, *val in rows.transpose().itertuples(name=None):
                 shifts[name] = np.asarray(val)
@@ -123,7 +197,7 @@ class FITS_file:
     name: str
     mjd: float
     run_num: int
-    exp_num: int
+    rot_pos: int
 
     def __lt__(self, other):
         if isinstance(other, FITS_file):

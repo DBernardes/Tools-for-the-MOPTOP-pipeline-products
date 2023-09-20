@@ -12,11 +12,12 @@ import sbpy
 
 star_name = "GRB 230818A"
 experiment = "all data"
+object_type = "Scientific objects"
 _set = "first"
 base_path = os.path.join(
     "..",
     "Pol charact MOPTOP",
-    "Scientific objects",
+    object_type,
     star_name,
     experiment,
     f"{_set} set",
@@ -25,10 +26,13 @@ base_path = os.path.join(
 
 
 ffiles = FITS_files_manager(base_path)
-shifts_file = os.path.join(base_path, "..", "shifts", "star_coords.csv")
-dest_path = os.path.join(base_path, "..", "combined images")
+shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
+dest_path = os.path.join(base_path, "..", "combined images", "5 positions", star_name)
 
-ffiles.combine_images_by_run(dest_path, shifts_file)
+ffiles.combine_images_by_rotor_position(
+    dest_path, shifts_file, nruns=5, use_moptp_name=True
+)
+
 # -----------------------------------------------------------------
 
 # camera = 3
