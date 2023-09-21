@@ -25,13 +25,12 @@ base_path = os.path.join(
 )
 
 
-ffiles = FITS_files_manager(base_path)
-shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
-dest_path = os.path.join(base_path, "..", "combined images", "5 positions", star_name)
+# ffiles = FITS_files_manager(base_path)
+# shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
+# dest_path = os.path.join(base_path, "..", "combined images", "5 positions", star_name)
 
-ffiles.combine_images_by_rotor_position(
-    dest_path, shifts_file, nruns=5, use_moptp_name=True
-)
+# ffiles.combine_images_by_rotor_position(
+#     dest_path, shifts_file, nruns=5, use_moptp_name=True)
 
 # -----------------------------------------------------------------
 
@@ -54,3 +53,10 @@ ffiles.combine_images_by_rotor_position(
 # phot.calc_psf_photons()
 # for obj in phot.obj_list:
 #     print(obj)
+
+# -----------------------------------------------------------------
+
+from scripts.tools import read_plane_coefficients
+
+df = read_plane_coefficients("R")
+print(df)

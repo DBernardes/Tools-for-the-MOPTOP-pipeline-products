@@ -13,7 +13,7 @@ from scipy import stats
 from sklearn import linear_model
 
 star_name = "BD+32 3739"
-experiment = "several positions in image/20230910"
+experiment = "several positions in image/20230830"
 camera = 4
 alpha = 0.7
 fontsize = 9
@@ -25,6 +25,7 @@ base_path = os.path.join(
 def prepare_data(new_path, parameter, filter="V"):
     df = pd.read_csv(new_path)
     rows = df.loc[df["wave"] == f"MOP-{filter}"]
+    rows = rows.drop(15)
     (x, y, val, val_err) = (
         np.asanyarray(rows["x"]),
         np.asanyarray(rows["y"]),
@@ -37,12 +38,13 @@ def prepare_data(new_path, parameter, filter="V"):
 
 def fit_plane(x, y, z):
     x1, y1, z1 = x.flatten(), y.flatten(), z.flatten()
-    X_data = np.array([x1, y1]).reshape((-1, 2))
+    X_data = np.array([x1, y1]).transpose()
     Y_data = z1
     reg = linear_model.LinearRegression().fit(X_data, Y_data)
     a, b = reg.coef_
     c = reg.intercept_
     X, Y = np.meshgrid(x, y)
+    print(a, b, c)
     Z = a * X + b * Y + c
     return X, Y, Z
 
@@ -80,7 +82,7 @@ def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
 fig = plt.figure(figsize=plt.figaspect(0.5))
 new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, "I")
+    x, y, val, val_err = prepare_data(new_path, parameter, "V")
 
     (
         res,

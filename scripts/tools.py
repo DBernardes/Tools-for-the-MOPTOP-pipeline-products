@@ -75,7 +75,7 @@ def manipulate_csv_file(path: str):
     pd.DataFrame.to_csv(df, new_path, index=False)
 
 
-def calculate_polarization(path: str) -> dict:
+def calculate_polarization_1(path: str) -> dict:
     """Calculate the polarization for a set of q and u values
 
     Parameters
@@ -103,6 +103,37 @@ def calculate_polarization(path: str) -> dict:
         pol_dict[key].append(err)
 
     return pol_dict
+
+
+def calculate_polarization_and_phase(
+    q: ndarray, q_err: ndarray, u: ndarray, u_err: ndarray
+) -> tuple[ndarray, ndarray]:
+    """Calculates the polarization and the phase for a set of q and u values
+
+    Parameters
+    ----------
+    q : ndarray
+        q Stokes values
+    q_err : ndarray
+        error in q Stokes values
+    u : ndarray
+        u Stokes values
+    u_err : ndarray
+        u error in u Stokes values
+
+    Returns
+    -------
+    tuple[ndarray, ndarray]
+        polarization and phase values, with their respective errors
+    """
+    pol = np.sqrt(q**2 + u**2) * 100
+    pol_err = np.sqrt((q / pol) ** 2 * q_err**2 + (u / pol) ** 2 * u_err**2) * 100
+    phase = np.rad2deg(2 * np.arctan(u / q))
+    phase_err = np.abs(phase) * np.sqrt(
+        (q_err / q) ** 2 + (u_err / u) ** 2
+    )  # TODO write the right phase error
+
+    return pol, pol_err, phase, phase_err
 
 
 def sort_qu_per_filter(path: str) -> dict:
@@ -462,9 +493,7 @@ def read_calculated_qu_values() -> dict:
         "I": (),
         "L": (),
     }
-    csv_file_name = os.path.join(
-        "..", "..", "Pol charact MOPTOP", "Low polarized stars", "mean_qu_values.csv"
-    )
+    csv_file_name = os.path.join("csv", "mean_qu_values.csv")
     df = pd.read_csv(csv_file_name)
     for star in df["star"]:
         if star not in ["GD319", "HD14069", "BD+32 3739"]:
@@ -474,3 +503,36 @@ def read_calculated_qu_values() -> dict:
         q, u = rows["q"], rows["u"]
         caculated_qu[filter] = (np.mean(q), np.std(q), np.mean(u), np.std(u))
     return caculated_qu
+
+
+def get_instrumental_polarization(
+    x: ndarray, y: ndarray, _filter: str, parameter: str
+) -> ndarray:
+    """Get the instrumental polarization for a given filter and Stokes parameter
+
+    Parameters
+    ----------
+    x : ndarray
+        X coordinates of the object
+    y : ndarray
+        Y coordinates of the object
+    _filter : str
+        Johnson filter used in observation
+    parameter : str
+        q or u Stokes parameter
+
+    Returns
+    -------
+    ndarray
+        q or u instrumental polarization values
+    """
+    csv_path = os.path.join(
+        "csv",
+        "plane_coefficients.csv",
+    )
+    df = pd.read_csv(csv_path)
+    row = df.loc[df["filter"] == _filter]
+
+    a, b, c = [row[f"{parameter}{letter}"].values[0] for letter in ["a", "b", "c"]]
+    Z = a * x + b * y + c
+    return Z
