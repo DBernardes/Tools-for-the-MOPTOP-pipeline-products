@@ -158,7 +158,7 @@ class FITS_files_manager:
                     if use_moptp_name:
                         file_name = hdr["EXPID"][:-1] + "1.fits"
                     file_name = os.path.join(dest_path, file_name)
-                    median = np.median(images, axis=0)
+                    median = np.mean(images, axis=0)
                     hdr["runnum"] = 0
                     fits.writeto(file_name, median, hdr, overwrite=True)
 

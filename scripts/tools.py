@@ -40,6 +40,11 @@ high_polarized_stars = {
 # https://www.not.iac.es/instruments/turpol/std/hpstd.html
 LIMIT_MJD = 59774
 
+parameters_MAS_estimator = {
+    "p_min": (1, 0.72, 0.6, -0.83, 4.41),
+    "p_max": (1, 0.97, 2.01),
+}
+
 
 def manipulate_csv_file(path: str):
     """Manipulate the raw_data.csv file created by the MOPTOP pipeline
@@ -128,10 +133,10 @@ def calculate_polarization_and_phase(
     """
     pol = np.sqrt(q**2 + u**2) * 100
     pol_err = np.sqrt((q / pol) ** 2 * q_err**2 + (u / pol) ** 2 * u_err**2) * 100
-    phase = np.rad2deg(2 * np.arctan(u / q))
+    phase = np.rad2deg(0.5 * np.arctan(u / q))
     phase_err = np.abs(phase) * np.sqrt(
         (q_err / q) ** 2 + (u_err / u) ** 2
-    )  # TODO write the right phase error
+    )  # TODO: write the right phase error
 
     return pol, pol_err, phase, phase_err
 
@@ -536,3 +541,112 @@ def get_instrumental_polarization(
     a, b, c = [row[f"{parameter}{letter}"].values[0] for letter in ["a", "b", "c"]]
     Z = a * x + b * y + c
     return Z
+
+
+def novel_pol_error(
+    q: ndarray, q_err: ndarray, u: ndarray, u_err: ndarray
+) -> tuple[ndarray]:
+    """Calculate the novel polarization
+
+    Parameters
+    ----------
+    q : ndarray
+        q Stokes parameter
+    q_err : ndarray
+        q error
+    u : ndarray
+        u Stokes parameter
+    u_err : ndarray
+        u error
+
+    Returns
+    -------
+    tuple[ndarray]
+        The values of the naive, modified, minimum, and maximum polarizations, and standard deviations.
+    """
+    pol = np.sqrt(q**2 + u**2) * 100  # eq2
+    pol_err = np.sqrt((q_err**2 + u_err**2) / 2) * 100  # eq29
+
+    b_sq = (q**2 * u_err**2 + u**2 * q_err**2) / (q**2 + u**2)  # eq30
+    p_mas_err = (
+        np.sqrt((u**2 * u_err**2 + q**2 * q_err**2) / (q**2 + u**2)) * 100
+    )  # eq31
+    p_mas = pol - (b_sq / (2.0 * pol)) * (1.0 - np.exp(-(pol**2) / b_sq))  # eq37
+
+    # eq26
+    p_alpha, beta, gamma = parameters_MAS_estimator["p_max"]
+    p_max = p_mas + pol_err * p_alpha * (1.0 - beta * np.exp(-gamma * p_mas / pol_err))
+    p_alpha, beta, gamma, omega, phi = parameters_MAS_estimator["p_min"]
+    p_min = p_mas - pol_err * p_alpha * (
+        1.0
+        + beta
+        * np.exp(-gamma * p_mas / pol_err)
+        * np.sin(omega * p_mas / pol_err + phi)
+    )
+
+    return (
+        pol,
+        pol_err,
+        p_mas,
+        p_mas_err,
+        p_min,
+        p_max,
+    )
+
+
+def novel_pol_error_1(
+    q: ndarray, q_err: ndarray, u: ndarray, u_err: ndarray
+) -> tuple[ndarray]:
+    """Calculate the novel polarization
+
+    Parameters
+    ----------
+    q : ndarray
+        q Stokes parameter
+    q_err : ndarray
+        q error
+    u : ndarray
+        u Stokes parameter
+    u_err : ndarray
+        u error
+
+    Returns
+    -------
+    tuple[ndarray]
+        The values of the naive, modified, minimum, and maximum polarizations, and standard deviations.
+    """
+    pol = np.sqrt(q**2 + u**2)
+    pol_err = np.sqrt((q_err**2 + u_err**2) / 2)
+
+    b_sq = (q**2 * u_err**2 + u**2 * q_err**2) / (q**2 + u**2)  # eq30
+    p_mas = pol - (b_sq / (2.0 * pol)) * (1.0 - np.exp(-(pol**2) / b_sq))  # eq37
+
+    p_mas_err = np.sqrt((u**2 * u_err**2 + q**2 * q_err**2) / (q**2 + u**2))
+
+    P_alpha = 1.0
+    beta = 0.97
+    gamma = 2.01
+    p_max_over_sigma = p_mas / pol_err + P_alpha * (
+        1.0 - beta * np.exp(-gamma * p_mas / pol_err)
+    )
+
+    p_max = p_max_over_sigma * pol_err
+    beta = 0.72
+    gamma = 0.60
+    omega = -0.83
+    phi = 4.41
+    p_min = p_mas - pol_err * P_alpha * (
+        1.0
+        + beta
+        * np.exp(-gamma * p_mas / pol_err)
+        * np.sin(omega * p_mas / pol_err + phi)
+    )
+
+    return (
+        pol,
+        pol_err,
+        p_mas,
+        p_mas_err,
+        p_min,
+        p_max,
+    )

@@ -11,40 +11,39 @@ from math import log10
 import sbpy
 
 star_name = "GRB 230818A"
-experiment = "all data"
+experiment = "all data/first set/"
 object_type = "Scientific objects"
-_set = "first"
 base_path = os.path.join(
     "..",
     "Pol charact MOPTOP",
     object_type,
     star_name,
     experiment,
-    f"{_set} set",
     star_name,
 )
 
 
-# ffiles = FITS_files_manager(base_path)
-# shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
-# dest_path = os.path.join(base_path, "..", "combined images", "5 positions", star_name)
+ffiles = FITS_files_manager(base_path)
+shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
+dest_path = os.path.join(base_path, "..", "combined images", "2 positions", star_name)
 
-# ffiles.combine_images_by_rotor_position(
-#     dest_path, shifts_file, nruns=5, use_moptp_name=True)
+ffiles.combine_images_by_rotor_position(
+    dest_path, shifts_file, nruns=2, use_moptp_name=True
+)
 
 # -----------------------------------------------------------------
 
 # camera = 3
-# csv_file = os.path.join(base_path, "..", f"objects coordinates.csv")
+# csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates.csv")
 # df = pd.read_csv(csv_file)
 # objects = {
 #     "name": ["object"],
-#     "ra": ["19:03:31.3029"],
-#     "dec": ["+40:53:43.022"],
+#     "ra": ["19:03:33.1120"],
+#     "dec": ["+40:54:08.919"],
 # }
 # objects = pd.DataFrame.from_dict(objects)
 
-# file = "3_e_run1.fits"
+# file = "4_e_20230818_5_2_2_1.fits"
 # file_path = os.path.join(base_path, file)
 # phot = Photometry(file_path, objects, 20)
 # phot.reset_object_coords()
@@ -55,8 +54,3 @@ base_path = os.path.join(
 #     print(obj)
 
 # -----------------------------------------------------------------
-
-from scripts.tools import read_plane_coefficients
-
-df = read_plane_coefficients("R")
-print(df)

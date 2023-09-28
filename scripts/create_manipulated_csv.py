@@ -10,7 +10,7 @@ from tools import manipulate_csv_file
 import os
 
 star_name = "GRB 230818A"
-experiment = "all data/first set"
+experiment = "all data/first set/combined images/2 positions"
 object_type = "Scientific objects"
 base_path = os.path.join(
     "..",
@@ -23,20 +23,6 @@ base_path = os.path.join(
     star_name,
 )
 
-star_name = "BD+32 3739"
-experiment = "several positions in image/20230910"
-camera = 4
-alpha = 0.7
-fontsize = 9
-base_path = os.path.join(
-    "..",
-    "..",
-    "Pol charact MOPTOP",
-    "Low polarized stars",
-    star_name,
-    experiment,
-    "reduced",
-    star_name,
-)
+
 csv_file_name = os.path.join(base_path, "raw_data.csv")
 manipulate_csv_file(csv_file_name)
