@@ -133,10 +133,13 @@ def calculate_polarization_and_phase(
     """
     pol = np.sqrt(q**2 + u**2) * 100
     pol_err = np.sqrt((q / pol) ** 2 * q_err**2 + (u / pol) ** 2 * u_err**2) * 100
-    phase = np.rad2deg(0.5 * np.arctan(u / q))
-    phase_err = np.abs(phase) * np.sqrt(
-        (q_err / q) ** 2 + (u_err / u) ** 2
-    )  # TODO: write the right phase error
+
+    # * Propagating the errors
+    x = u / q
+    std_x = np.abs(x) * np.sqrt((q_err / q) ** 2 + (u_err / u) ** 2)
+
+    phase = np.rad2deg(0.5 * np.arctan(x))
+    phase_err = np.rad2deg(0.5 * std_x / (1 + x**2))
 
     return pol, pol_err, phase, phase_err
 

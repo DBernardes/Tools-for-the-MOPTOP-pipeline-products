@@ -61,9 +61,10 @@ ax = axs[0]
 ax.errorbar(mjd, pol, pol_err, fmt="bo", alpha=0.5, label="naive estimator")
 ax.errorbar(mjd, p_mas, p_mas_err, fmt="ro", alpha=0.5, label="mas estimator")
 ax.set_ylabel(f"Polarization (%)")
+ax.set_ylim(0, 8)
 ax.legend()
 ax = axs[1]
-ax.plot(mjd, phase, "bo", alpha=0.5)
+ax.errorbar(mjd, phase, phase_err, fmt="bo", alpha=0.5)
 ax.set_ylabel("Phase (deg)")
 ax.set_xlabel("Time (min)")
 
