@@ -10,13 +10,13 @@ import numpy as np
 from tools import track_obj_over_images
 import matplotlib.patches as patches
 
-star_name = "BD+32 3739"
-experiment = "several positions in image/20230910"
+star_name = "GRB 221009A"
+experiment = "all data"
 src_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
-    "Low polarized stars",
+    "Scientific objects",
     star_name,
     experiment,
     star_name,

@@ -18,8 +18,8 @@ from sys import exit
 import pandas as pd
 
 
-star_name = "GRB 230818A"
-experiment = "all data/first set/combined images/2 positions"
+star_name = "GRB 1149293"
+experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
     "..",

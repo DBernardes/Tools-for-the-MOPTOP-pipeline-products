@@ -9,8 +9,8 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 from tools import manipulate_csv_file
 import os
 
-star_name = "GRB 230818A"
-experiment = "all data/first set/combined images/2 positions"
+star_name = "GRB 1149293"
+experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
     "..",

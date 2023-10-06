@@ -48,7 +48,7 @@ class Photometry:
         self,
         ra: str,
         dec: str,
-    ) -> None:
+    ) -> tuple[int, int]:
         """Get the object coordinates in image.
 
         Parameters
@@ -73,6 +73,19 @@ class Photometry:
         xcoord = int(x) + 1
         ycoord = int(y) + 1
         return xcoord, ycoord
+
+    def _convert_pixels_to_coords(self, x, y) -> tuple[str, str]:
+        wcs = WCS(self.header)
+
+        ra, dec = (
+            wcs.pixel_to_world(
+                x,
+                y,
+            )
+            .to_string("hmsdms")
+            .split(" ")
+        )
+        return ra, dec
 
     @staticmethod
     def _calc_background_level(image: np.ndarray, nsigma: int = 4) -> float:
@@ -157,9 +170,11 @@ class Photometry:
                 closest_y += y - size
 
             new_x, new_y = self._find_coords_max_pixel(closest_x, closest_y)
+            ra, dec = self._convert_pixels_to_coords(new_x, new_y)
             new_x += 1
             new_y += 1
             self.obj_list[idx].xcoord, self.obj_list[idx].ycoord = new_x, new_y
+            self.obj_list[idx].ra, self.obj_list[idx].dec = ra, dec
         return
 
     def calc_psf_radius(self):
@@ -260,6 +275,8 @@ class Object:
     xcoord: str
     ycoord: str
     mjd: float
+    ra: str = 0
+    dec: str = 0
     psf_radius: float = 0
     sky_photons: float = 0
     star_photons: float = 0
