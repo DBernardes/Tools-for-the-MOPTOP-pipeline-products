@@ -14,7 +14,7 @@ star_name = "GRB 1149293"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
-    "..", "Pol charact MOPTOP", object_type, star_name, experiment, "all data"
+    "..", "Pol charact MOPTOP", object_type, star_name, experiment, star_name
 )
 
 
@@ -30,14 +30,14 @@ base_path = os.path.join(
 
 camera = 3
 csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates.csv")
-df = pd.read_csv(csv_file)
-objects = {
-    "name": ["object"],
-    "ra": ["6:34:22.0457"],
-    "dec": ["+49:48:36.379"],
-}
-objects = pd.DataFrame.from_dict(objects)
-file = "3_e_20230116_19_1_1_1.fits"
+objects = pd.read_csv(csv_file)
+# objects = {
+#     "name": ["object"],
+#     "ra": ["6:34:22.0457"],
+#     "dec": ["+49:48:36.379"],
+# }
+objects = objects.loc[objects["name"] == "comparison"]
+file = "3_e_20230116_19_2_3_1.fits"
 file_path = os.path.join(base_path, file)
 phot = Photometry(file_path, objects)
 phot.reset_object_coords()

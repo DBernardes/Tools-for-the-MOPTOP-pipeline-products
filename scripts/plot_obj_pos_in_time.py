@@ -11,16 +11,16 @@ import numpy as np
 import pandas as pd
 
 min, max = 59775, 60051
-star_name = "GRB 230818A"
-experiment = "all data"
+star_name = "GRB 1163401"
+_set = "third"
 base_path = os.path.join(
     "..",
     "..",
     "Pol charact MOPTOP",
     "Scientific objects",
     star_name,
-    experiment,
-    star_name,
+    f"{_set} set",
+    "all data",
 )
 fig, axs = plt.subplots(1, 2, figsize=(15, 7))
 

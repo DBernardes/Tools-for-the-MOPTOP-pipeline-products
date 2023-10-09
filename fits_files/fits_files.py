@@ -103,7 +103,7 @@ class FITS_files_manager:
                         # file_name = os.path.join(dest_path, f"{ffile.name}")
                         # fits.writeto(file_name, data, hdr, overwrite=True)
                     images.append(data)
-                file_name = os.path.join(dest_path, f"{cam[-1]}_e_run{run}.fits")
+                file_name = os.path.join(dest_path, self._get_moptop_file_name(hdr))
                 median = np.median(images, axis=0)
                 hdr["expnum"] = 0
                 fits.writeto(file_name, median, hdr, overwrite=True)
@@ -156,7 +156,7 @@ class FITS_files_manager:
                         images.append(data)
                     file_name = f"{cam[-1]}_e_rpos{rpos}_{idx+1}.fits"
                     if use_moptp_name:
-                        file_name = hdr["EXPID"][:-1] + "1.fits"
+                        file_name = self._get_moptop_file_name(hdr)
                     file_name = os.path.join(dest_path, file_name)
                     median = np.mean(images, axis=0)
                     hdr["runnum"] = 0
@@ -188,6 +188,10 @@ class FITS_files_manager:
         image = image[y - new_size : y + new_size + 1, x - new_size : x + new_size + 1]
 
         return image
+
+    @staticmethod
+    def _get_moptop_file_name(hdr):
+        return hdr["EXPID"][:-1] + "1.fits"
 
 
 @dataclass

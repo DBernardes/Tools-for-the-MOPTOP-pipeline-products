@@ -20,7 +20,7 @@ from scipy.constants import h, c
 class Photometry:
     """Photometry class"""
 
-    def __init__(self, file: str, objects: DataFrame, max_size: int = 10) -> None:
+    def __init__(self, file: str, objects: DataFrame, max_size: int = 15) -> None:
         """Initialize the class
 
         Parameters
@@ -194,6 +194,8 @@ class Photometry:
             x, y = _object.xcoord, _object.ycoord
             r = self.max_radius
             img_data = self.image[y - r : y + r, x - r : x + r]
+            # median = np.median(self.image)
+            # std = np.std(self.image)
             # plt.imshow(img_data, origin="lower")
             # plt.show()
 
@@ -202,8 +204,10 @@ class Photometry:
             n = len(light_profile)
             x = np.linspace(0, n - 1, n)
             spline = UnivariateSpline(x, light_profile - half_max, s=None)
-            roots = spline.roots()
+            # plt.plot(spline(x))
+            # plt.show()
 
+            roots = spline.roots()
             idx_max_val = np.argmax(spline(x))
             tmp = np.abs(roots - idx_max_val)
             idx_r_1 = np.argmin(tmp)
@@ -250,10 +254,8 @@ class Photometry:
             )
             star = self.image[np.where(mask)]
             star_photons = np.sum(star - _object.sky_photons)
-            if star_photons <= 0:
-                raise ValueError(
-                    f"\nThe calculated number for the photons of the star is smaller than or equal to zero: {star_photons}."
-                )
+            if star_photons < 0:
+                star_photons = 0
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
                 star_photons + _object.sky_photons * star.shape[0]
