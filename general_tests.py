@@ -10,38 +10,27 @@ from fits_files import FITS_files_manager
 from math import log10
 import sbpy
 
-star_name = "GRB 1149293"
+star_name = "GRB 1163401"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
-    "..", "Pol charact MOPTOP", object_type, star_name, experiment, star_name
+    "..", "Pol charact MOPTOP", object_type, star_name, experiment, "combined"
 )
 
-
-# ffiles = FITS_files_manager(base_path)
-# shifts_file = os.path.join(base_path, "..", "setup", "star_coords.csv")
-# dest_path = os.path.join(base_path, "..", "combined images", "2 positions", star_name)
-
-# ffiles.combine_images_by_rotor_position(
-#     dest_path, shifts_file, nruns=2, use_moptp_name=True
-# )
-
-# -----------------------------------------------------------------
-
 camera = 3
-csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates.csv")
+csv_file = os.path.join(
+    base_path, "..", "setup", f"objects coordinates_combined images.csv"
+)
 objects = pd.read_csv(csv_file)
-# objects = {
-#     "name": ["object"],
-#     "ra": ["6:34:22.0457"],
-#     "dec": ["+49:48:36.379"],
-# }
-objects = objects.loc[objects["name"] == "comparison"]
-file = "3_e_20230116_19_2_3_1.fits"
+
+objects = objects.loc[objects["name"] == "candidate11"]
+file = "3_e_20230408_10_6_16_1.fits"
 file_path = os.path.join(base_path, file)
 phot = Photometry(file_path, objects)
 phot.reset_object_coords()
 phot.calc_psf_radius()
+phot.calc_sky_photons()
+phot.calc_psf_photons()
 for obj in phot.obj_list:
     print(obj)
 

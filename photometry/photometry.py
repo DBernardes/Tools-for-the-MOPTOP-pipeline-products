@@ -96,13 +96,13 @@ class Photometry:
             (median - nsigma * std < image) & (image < median + nsigma * std)
         )
         background_pixels = image[indexes]
-        median = np.median(background_pixels)
-        std = np.std(background_pixels)
-        background_level = median + nsigma * std
-        return background_level
+        sky = np.median(background_pixels)
+        sky_err = np.std(background_pixels)
+
+        return sky, sky_err
 
     @staticmethod
-    def _create_objects_maks(image, background_level: float) -> np.ndarray:
+    def _create_objects_mask(image, background_level: float) -> np.ndarray:
         working_mask = np.zeros(image.shape, bool)
         y_coords, x_coords = np.where(image > background_level)
         working_mask[(y_coords, x_coords)] = 1
@@ -137,8 +137,9 @@ class Photometry:
             closest_y - size : closest_y + size, closest_x - size : closest_x + size
         ]
 
-        background_level = self._calc_background_level(image)
-        working_mask = self._create_objects_maks(image, background_level)
+        sky, sky_err = self._calc_background_level(image)
+        background_level = sky + 4 * sky_err
+        working_mask = self._create_objects_mask(image, background_level)
 
         max_value = np.max(image)
         if np.sum(working_mask) > 0:
@@ -158,11 +159,16 @@ class Photometry:
             x, y = _object.xcoord, _object.ycoord
             size = self.max_radius
             image = self.image[y - size : y + size, x - size : x + size]
-            # plt.imshow(image, origin="lower")
+            # median = np.median(image)
+            # std = np.std(image)
+            # plt.imshow(
+            #     image, origin="lower", vmax=median + 3 * std, vmin=median - 3 * std
+            # )
             # plt.show()
 
-            background_level = self._calc_background_level(image)
-            working_mask = self._create_objects_maks(image, background_level)
+            sky, sky_err = self._calc_background_level(image)
+            background_level = sky + 4 * sky_err  # TODO: check this
+            working_mask = self._create_objects_mask(image, background_level)
             closest_x, closest_y = x, y
             if np.sum(working_mask) > 0:
                 closest_x, closest_y = self._find_closest_object(working_mask)
@@ -173,8 +179,10 @@ class Photometry:
             ra, dec = self._convert_pixels_to_coords(new_x, new_y)
             new_x += 1
             new_y += 1
-            self.obj_list[idx].xcoord, self.obj_list[idx].ycoord = new_x, new_y
-            self.obj_list[idx].ra, self.obj_list[idx].dec = ra, dec
+            _object.xcoord, _object.ycoord = new_x, new_y
+            _object.ra, _object.dec = ra, dec
+            _object.sky_photons = sky
+            self.obj_list[idx] = _object
         return
 
     def calc_psf_radius(self):
@@ -191,12 +199,14 @@ class Photometry:
             FWHM calculated for the object.
         """
         for idx, _object in enumerate(self.obj_list):
-            x, y = _object.xcoord, _object.ycoord
+            x, y, sky_photons = _object.xcoord, _object.ycoord, _object.sky_photons
             r = self.max_radius
-            img_data = self.image[y - r : y + r, x - r : x + r]
+            img_data = self.image[y - r : y + r, x - r : x + r] - sky_photons
             # median = np.median(self.image)
             # std = np.std(self.image)
-            # plt.imshow(img_data, origin="lower")
+            # plt.imshow(
+            #     img_data, origin="lower", vmax=median + 3 * std, vmin=median - 3 * std
+            # )
             # plt.show()
 
             light_profile = np.take(img_data, r - 1, axis=0)

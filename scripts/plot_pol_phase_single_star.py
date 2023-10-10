@@ -18,7 +18,7 @@ from sys import exit
 import pandas as pd
 
 
-star_name = "GRB 1149293"
+star_name = "GRB 1163401"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
