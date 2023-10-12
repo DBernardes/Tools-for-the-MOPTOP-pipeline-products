@@ -87,33 +87,31 @@ class Photometry:
         )
         return ra, dec
 
-    @staticmethod
-    def _calc_background_level(image: np.ndarray, nsigma: int = 4) -> float:
+    def _calc_background_level(self, image: np.ndarray) -> float:
         median = np.median(image)
         std = np.median(np.abs(image - median))
 
         indexes = np.where(
-            (median - nsigma * std < image) & (image < median + nsigma * std)
+            (median - self.bkg_sigma * std < image)
+            & (image < median + self.bkg_sigma * std)
         )
         background_pixels = image[indexes]
         sky = np.median(background_pixels)
-        sky_err = np.std(background_pixels)
+        self.background_level = sky + 4 * np.std(background_pixels)
+        return sky
 
-        return sky, sky_err
-
-    @staticmethod
-    def _create_objects_mask(image, background_level: float) -> np.ndarray:
+    def _create_objects_mask(self, image: np.ndarray) -> np.ndarray:
         working_mask = np.zeros(image.shape, bool)
-        y_coords, x_coords = np.where(image > background_level)
+        y_coords, x_coords = np.where(image > self.background_level)
         working_mask[(y_coords, x_coords)] = 1
+
+        # plt.imshow(working_mask, origin="lower")
+        # plt.show()
 
         for x, y in zip(x_coords, y_coords):
             sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
             if np.sum(sub_image) <= 1:
                 working_mask[y, x] = 0
-
-        # plt.imshow(working_mask, origin="lower")
-        # plt.show()
 
         return working_mask
 
@@ -130,16 +128,13 @@ class Photometry:
 
         return closest_x, closest_y
 
-    def _find_coords_max_pixel(self, closest_x, closest_y):
+    def _find_coords_max_pixel(self, closest_x: int, closest_y: int):
         size = 10
-
         image = self.image[
             closest_y - size : closest_y + size, closest_x - size : closest_x + size
         ]
-
-        sky, sky_err = self._calc_background_level(image)
-        background_level = sky + 4 * sky_err
-        working_mask = self._create_objects_mask(image, background_level)
+        self._calc_background_level(image)
+        working_mask = self._create_objects_mask(image)
 
         max_value = np.max(image)
         if np.sum(working_mask) > 0:
@@ -153,11 +148,12 @@ class Photometry:
         new_y = new_y[0] + closest_y - size
         return new_x, new_y
 
-    def reset_object_coords(self):
+    def reset_object_coords(self, bkg_sigma: int = 4):
         """Recalculate the object coordinates."""
+        self.bkg_sigma = bkg_sigma
+        size = self.max_radius
         for idx, _object in enumerate(self.obj_list):
             x, y = _object.xcoord, _object.ycoord
-            size = self.max_radius
             image = self.image[y - size : y + size, x - size : x + size]
             # median = np.median(image)
             # std = np.std(image)
@@ -166,9 +162,9 @@ class Photometry:
             # )
             # plt.show()
 
-            sky, sky_err = self._calc_background_level(image)
-            background_level = sky + 4 * sky_err  # TODO: check this
-            working_mask = self._create_objects_mask(image, background_level)
+            # to get a first estimate for the sky
+            _object.sky_photons = self._calc_background_level(image)
+            working_mask = self._create_objects_mask(image)
             closest_x, closest_y = x, y
             if np.sum(working_mask) > 0:
                 closest_x, closest_y = self._find_closest_object(working_mask)
@@ -177,11 +173,11 @@ class Photometry:
 
             new_x, new_y = self._find_coords_max_pixel(closest_x, closest_y)
             ra, dec = self._convert_pixels_to_coords(new_x, new_y)
+            _object.ra, _object.dec = ra, dec
             new_x += 1
             new_y += 1
             _object.xcoord, _object.ycoord = new_x, new_y
-            _object.ra, _object.dec = ra, dec
-            _object.sky_photons = sky
+
             self.obj_list[idx] = _object
         return
 
