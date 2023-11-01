@@ -17,16 +17,17 @@ class FITS_files_manager:
     """This class is a manager to deal with groups of FITS files."""
 
     def __init__(self, dir_path: str, file_name_tag: str = ".fits"):
+        self.file_name_tag = file_name_tag
         if not os.path.isdir(dir_path):
             raise FileNotFoundError(dir_path)
         self.dir_path = dir_path
-        self._create_FITS_objs(file_name_tag)
+        self._create_FITS_objs()
 
         return
 
-    def _create_FITS_objs(self, file_name_tag):
+    def _create_FITS_objs(self):
         self.cam_files = {"cam3": [], "cam4": []}
-        list_dir = [f for f in os.listdir(self.dir_path) if file_name_tag in f]
+        list_dir = [f for f in os.listdir(self.dir_path) if self.file_name_tag in f]
         for file in list_dir:
             file_path = os.path.join(self.dir_path, file)
             hdr = fits.getheader(file_path)
@@ -76,7 +77,35 @@ class FITS_files_manager:
             ]
         return current_rpos
 
-    def combine_images_by_run(self, dest_path: str, shifts_file: str = ""):
+    def shift_images(self, obj_coords_file: str):
+        """Shift the images.
+
+        Shift the images based on the coordinates of the object found in the 'obj_coords_file'.
+
+        Parameters
+        ----------
+        obj_coords_file : str
+            A csv file with the x and y coordiantes of the object over the image series.
+        """
+        shifts = self._get_shifts(obj_coords_file)
+        dest_path = os.path.join(self.dir_path, "..", "shifted_images")
+        if not os.path.exists(dest_path):
+            os.mkdir(dest_path)
+
+        for cam, ffiles in self.cam_files.items():
+            for idx, ffile in enumerate(ffiles):
+                x_shift = shifts[f"{cam}_x"][idx]
+                y_shift = shifts[f"{cam}_y"][idx]
+                file_name = os.path.join(self.dir_path, ffile.name)
+                data, hdr = fits.getdata(file_name, header=True)
+                data = self._shift_image(data, x_shift, y_shift)
+                file_name = os.path.join(dest_path, ffile.name)
+                fits.writeto(file_name, data, hdr, overwrite=True)
+        self.dir_path = dest_path
+
+        return
+
+    def combine_images_by_run(self, dest_path: str):
         """Combine a set of images of the same run.
 
         Parameters
@@ -88,30 +117,19 @@ class FITS_files_manager:
         run_numbers = [item for item, _ in collections.Counter(run_numbers).items()]
         for run in run_numbers:
             current_run = self.get_images_by_run(run)
-            for cam, ffiles in current_run.items():
+            for _, ffiles in current_run.items():
                 images = []
-                shifts = self._get_shifts(run, shifts_file, "run_num")
-                for idx, ffile in enumerate(ffiles):
+                for ffile in ffiles:
                     file_name = os.path.join(self.dir_path, ffile.name)
                     data, hdr = fits.getdata(file_name, header=True)
-                    if shifts_file != "":
-                        x_shift, y_shift = (
-                            shifts[f"{cam}_x"][idx],
-                            shifts[f"{cam}_y"][idx],
-                        )
-                        data = self._shift_image(data, x_shift, y_shift)
-                        # file_name = os.path.join(dest_path, f"{ffile.name}")
-                        # fits.writeto(file_name, data, hdr, overwrite=True)
                     images.append(data)
-                file_name = os.path.join(dest_path, self._get_moptop_file_name(hdr))
+                file_name = os.path.join(dest_path, ffile.name)
                 median = np.median(images, axis=0)
                 hdr["expnum"] = 0
                 fits.writeto(file_name, median, hdr, overwrite=True)
         return
 
-    def combine_images_by_rotor_position(
-        self, dest_path: str, shifts_file="", nruns=None, use_moptp_name=False
-    ):
+    def combine_images_by_rotor_position(self, dest_path: str, nruns=None):
         """Combine a set of images of the same rotor position.
 
         Parameters
@@ -119,65 +137,39 @@ class FITS_files_manager:
         dest_path : str
             destination path
 
-        shifts_file : str, optional
-            path of the shifts file. The default is "".
-
         nruns : int, optional
             Number of runs to be combined. The default is None.
 
         use_moptp_name : bool, optional
             If True, use the MOPTOP name for the images. The default is False.
         """
-        rpos_numbers = [obj.rot_pos for obj in self.cam_files["cam3"]]
-        counter = collections.Counter(rpos_numbers).items()
-        imgs_per_rotor_position = [pos for _, pos in counter]
-        if sum(imgs_per_rotor_position) % 16 != 0:
-            raise ValueError(
-                "There are not the same number of images per rotor position."
-            )
-        rotor_positions = [pos for pos, _ in counter]
+
+        rotor_positions = self._get_rotor_positions()
         for rpos in rotor_positions:
             current_rpos = self.get_images_by_rotor_position(rpos)
-            for cam, ffiles in current_rpos.items():
+            for ffiles in current_rpos.values():
                 images = []
-                shifts = self._get_shifts(rpos, shifts_file, "exp_num")
-
                 for idx1, _tuple in enumerate(zip(*[iter(ffiles)] * nruns)):
                     for idx2, ffile in enumerate(_tuple):
                         idx = idx2 + idx1 * nruns
                         file_name = os.path.join(self.dir_path, ffile.name)
                         data, hdr = fits.getdata(file_name, header=True)
-                        if shifts_file != "":
-                            x_shift, y_shift = (
-                                shifts[f"{cam}_x"][idx],
-                                shifts[f"{cam}_y"][idx],
-                            )
-                            data = self._shift_image(data, x_shift, y_shift)
                         images.append(data)
-                    file_name = f"{cam[-1]}_e_rpos{rpos}_{idx+1}.fits"
-                    if use_moptp_name:
-                        file_name = self._get_moptop_file_name(hdr)
-                    file_name = os.path.join(dest_path, file_name)
+
+                    file_name = os.path.join(dest_path, ffile.name)
                     median = np.mean(images, axis=0)
                     hdr["runnum"] = 0
                     fits.writeto(file_name, median, hdr, overwrite=True)
 
     @staticmethod
-    def _get_shifts(run, shifts_file, parameter):
-        if shifts_file == "":
-            return []
-        else:
-            df = pd.read_csv(shifts_file)
-            rows = df.loc[df[parameter] == run]
-            shifts = {}
-            for name, *val in rows.transpose().itertuples(name=None):
-                shifts[name] = np.asarray(val)
+    def _get_shifts(shifts_file):
+        df = pd.read_csv(shifts_file)
+        shifts = df.drop(df.columns[[0, 1]], axis=1).to_dict(orient="list")
 
-            shifts["cam3_x"] -= shifts["cam3_x"][0]
-            shifts["cam3_y"] -= shifts["cam3_y"][0]
-            shifts["cam4_x"] -= shifts["cam4_x"][0]
-            shifts["cam4_y"] -= shifts["cam4_y"][0]
-            return shifts
+        for key, value in shifts.items():
+            shifts[key] = np.asarray(shifts[key]) - value[0]
+
+        return shifts
 
     @staticmethod
     def _shift_image(image, x_shift, y_shift):
@@ -189,9 +181,19 @@ class FITS_files_manager:
 
         return image
 
-    @staticmethod
-    def _get_moptop_file_name(hdr):
-        return hdr["EXPID"][:-1] + "1.fits"
+    # @staticmethod
+    # def _get_moptop_file_name(hdr):
+    #     return hdr["EXPID"][:-1] + "1.fits"
+
+    def _get_rotor_positions(self):
+        rpos_numbers = [obj.rot_pos for obj in self.cam_files["cam3"]]
+        counter = collections.Counter(rpos_numbers).items()
+        imgs_per_rotor_position = [n for _, n in counter]
+        if sum(imgs_per_rotor_position) % 16 != 0:
+            raise ValueError(
+                "There are not the same number of images per rotor position."
+            )
+        return [pos for pos, _ in counter]
 
 
 @dataclass
