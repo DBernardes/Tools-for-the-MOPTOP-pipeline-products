@@ -11,7 +11,7 @@ from math import log10
 import sbpy
 
 star_name = "GRB 1149293"
-experiment = "second set"
+experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
     "..", "Pol charact MOPTOP", object_type, star_name, experiment, "combined"
@@ -35,7 +35,4 @@ base_path = os.path.join(
 
 
 ffile_man = FITS_files_manager("./tests/images")
-shifts = ffile_man._get_shifts(
-    "run_num", 2, "./tests/useful_files/coords_over_series.csv"
-)
-print(shifts)
+ffile_man._verify_rotor_positions()

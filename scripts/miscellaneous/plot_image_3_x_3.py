@@ -14,11 +14,11 @@ initial_stepy = (0.5 * ysize - stepy) / plate_scale
 
 fig, ax = plt.subplots()
 
-for y in range(stepy, ysize, sep * stepy):
+for y in range(-stepy, ysize + 2 * stepy, sep * stepy):
     for x in range(-stepx, xsize + 2 * stepx, sep * stepx):
         ax.plot(x, y, "bo", alpha=0.5)
-        strx = x - stepx
-        stry = y - stepy
+        strx = x + stepx
+        stry = y + stepy
         ax.annotate(f"({strx:.2f},{stry:.2f})", (x, y + 30), fontsize=10, ha="center")
 
 # Create a Rectangle patch
@@ -31,11 +31,11 @@ rect = patches.Rectangle(
     facecolor="none",
 )
 
-# ax.set_title(f"Initial step: -{initial_stepx:.2f},-{initial_stepy:.2f}")
-# ax.add_patch(rect)
+plt.title(f"Initial step: -{initial_stepx:.2f},-{initial_stepy:.2f}")
+ax.add_patch(rect)
 plt.xlim(0, xsize)
 plt.ylim(0, ysize)
-plt.title("Position of the object over the CCD frame")
+# plt.title("Position of the object over the CCD frame")
 plt.xlabel("X axis (pixels)")
 plt.ylabel("Y axis (pixels)")
 plt.show()

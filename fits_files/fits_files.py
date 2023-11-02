@@ -144,17 +144,46 @@ class FITS_files_manager:
             If True, use the MOPTOP name for the images. The default is False.
         """
 
-        rotor_positions = self._get_rotor_positions()
-        for rpos in rotor_positions:
+        self._verify_rotor_positions()
+        for rpos in np.linspace(1, 16, 16, dtype=int):
             current_rpos = self.get_images_by_rotor_position(rpos)
             for ffiles in current_rpos.values():
-                images = []
-                for idx1, _tuple in enumerate(zip(*[iter(ffiles)] * nruns)):
-                    for idx2, ffile in enumerate(_tuple):
-                        idx = idx2 + idx1 * nruns
+                # This creates a list of images with the provided number of runs
+                for _tuple in zip(*[iter(ffiles)] * nruns):
+                    images = []
+                    for ffile in _tuple:
                         file_name = os.path.join(self.dir_path, ffile.name)
                         data, hdr = fits.getdata(file_name, header=True)
                         images.append(data)
+                    file_name = os.path.join(dest_path, ffile.name)
+                    median = np.mean(images, axis=0)
+                    hdr["runnum"] = 0
+                    fits.writeto(file_name, median, hdr, overwrite=True)
+
+    def combine_images_by_rotor_position_1(self, dest_path: str, nruns=None):
+        """Combine a set of images of the same rotor position.
+
+        Parameters
+        ----------
+        dest_path : str
+            destination path
+
+        nruns : int, optional
+            Number of runs to be combined. The default is None.
+
+        use_moptp_name : bool, optional
+            If True, use the MOPTOP name for the images. The default is False.
+        """
+
+        self._verify_rotor_positions()
+        for rpos in np.linspace(1, 16, 16, dtype=int):
+            current_rpos = self.get_images_by_rotor_position(rpos)
+            for ffiles in current_rpos.values():
+                images = []
+                for ffile in ffiles:
+                    file_name = os.path.join(self.dir_path, ffile.name)
+                    data, hdr = fits.getdata(file_name, header=True)
+                    images.append(data)
 
                     file_name = os.path.join(dest_path, ffile.name)
                     median = np.mean(images, axis=0)
@@ -181,19 +210,16 @@ class FITS_files_manager:
 
         return image
 
-    # @staticmethod
-    # def _get_moptop_file_name(hdr):
-    #     return hdr["EXPID"][:-1] + "1.fits"
-
-    def _get_rotor_positions(self):
-        rpos_numbers = [obj.rot_pos for obj in self.cam_files["cam3"]]
-        counter = collections.Counter(rpos_numbers).items()
-        imgs_per_rotor_position = [n for _, n in counter]
-        if sum(imgs_per_rotor_position) % 16 != 0:
-            raise ValueError(
-                "There are not the same number of images per rotor position."
-            )
-        return [pos for pos, _ in counter]
+    def _verify_rotor_positions(self):
+        for ffiles in self.cam_files.values():
+            rpos_numbers = [obj.rot_pos for obj in ffiles]
+            counter = collections.Counter(rpos_numbers).items()
+            imgs_per_rotor_position = [n for _, n in counter]
+            if sum(imgs_per_rotor_position) % 16 != 0:
+                raise ValueError(
+                    "There is a different number of images per rotor position."
+                )
+        return
 
 
 @dataclass

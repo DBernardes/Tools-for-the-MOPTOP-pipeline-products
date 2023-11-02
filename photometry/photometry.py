@@ -20,21 +20,21 @@ from scipy.constants import h, c
 class Photometry:
     """Photometry class"""
 
-    def __init__(self, file: str, objects: DataFrame, max_size: int = 15) -> None:
+    def __init__(self, fits_file: str, objects: DataFrame, max_size: int = 15) -> None:
         """Initialize the class
 
         Parameters
         ----------
-        file : str
+        fits_file : str
             FITS file name.
         objects: DataFrame
             A pandas Dataframe of tuples with the name, right ascension, and declination of the objects.
         max_size: int
             maximum size, in pixels, of the box in which the object can be found. Default to 30.
         """
-        self.file = file
+        self.fits_file = fits_file
         self.max_radius = max_size // 2
-        self.image, self.header = fits.getdata(file, header=True)
+        self.image, self.header = fits.getdata(fits_file, header=True)
         self.image *= self.header["GAIN"]  # ? is this right
         self.image_shape = self.image.shape
         self.obj_list = []
@@ -87,26 +87,26 @@ class Photometry:
         )
         return ra, dec
 
-    def _calc_background_level(self, image: np.ndarray) -> float:
+    @staticmethod
+    def _calc_background_level(image: np.ndarray, bkg_sigma: float) -> float:
         median = np.median(image)
         std = np.median(np.abs(image - median))
 
-        indexes = np.where(
-            (median - self.bkg_sigma * std < image)
-            & (image < median + self.bkg_sigma * std)
-        )
+        max_lim, min_lim = median + bkg_sigma * std, median - bkg_sigma * std
+        indexes = np.where((min_lim < image) & (image < max_lim))
         background_pixels = image[indexes]
         sky = np.median(background_pixels)
-        self.background_level = sky + 4 * np.std(background_pixels)
-        return sky
+        background_level = sky + 4 * np.std(background_pixels)
+
+        return background_level
 
     def _create_objects_mask(self, image: np.ndarray) -> np.ndarray:
-        working_mask = np.zeros(image.shape, bool)
-        y_coords, x_coords = np.where(image > self.background_level)
-        working_mask[(y_coords, x_coords)] = 1
+        # get a first estimate for the sky
+        background_level = self._calc_background_level(image, self.bkg_sigma)
 
-        # plt.imshow(working_mask, origin="lower")
-        # plt.show()
+        working_mask = np.zeros(image.shape, bool)
+        y_coords, x_coords = np.where(image > background_level)
+        working_mask[(y_coords, x_coords)] = 1
 
         for x, y in zip(x_coords, y_coords):
             sub_image = working_mask[y - 1 : y + 2, x - 1 : x + 2]
@@ -115,103 +115,73 @@ class Photometry:
 
         return working_mask
 
-    @staticmethod
-    def _find_closest_object(working_mask: np.ndarray):
-        center_coord = working_mask.shape[0] // 2
-        y_coords, x_coords = np.where(working_mask == 1)
-        x_coords -= center_coord
-        y_coords -= center_coord
-        distances = np.sqrt(x_coords**2 + y_coords**2)
-        idx_min = np.argmin(distances)
-        closest_x = x_coords[idx_min] + center_coord
-        closest_y = y_coords[idx_min] + center_coord
+    def _find_closest_object(self, image):
+        working_mask = self._create_objects_mask(image)
+        if np.sum(working_mask) > 0:
+            center_coord = working_mask.shape[0] // 2
+            y_coords, x_coords = np.where(working_mask == 1)
+            x_coords -= center_coord
+            y_coords -= center_coord
+            distances = np.sqrt(x_coords**2 + y_coords**2)
+            idx_min = np.argmin(distances)
+            closest_x = x_coords[idx_min] + center_coord
+            closest_y = y_coords[idx_min] + center_coord
 
-        return closest_x, closest_y
+            return closest_x, closest_y
+        else:
+            return None
 
-    def _find_coords_max_pixel(self, closest_x: int, closest_y: int):
-        size = 10
-        image = self.image[
-            closest_y - size : closest_y + size, closest_x - size : closest_x + size
-        ]
-        self._calc_background_level(image)
+    def _find_coords_max_pixel(self, image: np.ndarray):
         working_mask = self._create_objects_mask(image)
 
         max_value = np.max(image)
         if np.sum(working_mask) > 0:
             max_value = np.max(image[working_mask])
-
-        # plt.imshow(working_mask, origin="lower")
-        # plt.show()
-
         new_y, new_x = np.where(image == max_value)
-        new_x = new_x[0] + closest_x - size
-        new_y = new_y[0] + closest_y - size
-        return new_x, new_y
+
+        return new_x[0], new_y[0]
 
     def reset_object_coords(self, bkg_sigma: int = 4):
         """Recalculate the object coordinates."""
-        self.bkg_sigma = bkg_sigma
         size = self.max_radius
+        self.bkg_sigma = bkg_sigma
         for idx, _object in enumerate(self.obj_list):
             x, y = _object.xcoord, _object.ycoord
             image = self.image[y - size : y + size, x - size : x + size]
-            # median = np.median(image)
-            # std = np.std(image)
-            # plt.imshow(
-            #     image, origin="lower", vmax=median + 3 * std, vmin=median - 3 * std
-            # )
-            # plt.show()
 
-            # to get a first estimate for the sky
-            _object.sky_photons = self._calc_background_level(image)
-            working_mask = self._create_objects_mask(image)
-            closest_x, closest_y = x, y
-            if np.sum(working_mask) > 0:
-                closest_x, closest_y = self._find_closest_object(working_mask)
+            new_coords = self._find_closest_object(image)
+            if new_coords != None:
+                closest_x, closest_y = new_coords
                 closest_x += x - size
                 closest_y += y - size
+                image = self.image[
+                    closest_y - size : closest_y + size,
+                    closest_x - size : closest_x + size,
+                ]
 
-            new_x, new_y = self._find_coords_max_pixel(closest_x, closest_y)
+            new_x, new_y = self._find_coords_max_pixel(image)
+            new_x += x - size
+            new_y += y - size
             ra, dec = self._convert_pixels_to_coords(new_x, new_y)
             _object.ra, _object.dec = ra, dec
-            new_x += 1
-            new_y += 1
-            _object.xcoord, _object.ycoord = new_x, new_y
+            _object.xcoord, _object.ycoord = new_x + 1, new_y + 1
 
             self.obj_list[idx] = _object
         return
 
     def calc_psf_radius(self):
-        """Calculate FWHM of the object
+        """Calculate FWHM of the object."""
 
-        Parameters
-        ----------
-        size : int, optional
-            size of the box in which the object will be evaluated, by default 20.
-
-        Returns
-        -------
-        float
-            FWHM calculated for the object.
-        """
         for idx, _object in enumerate(self.obj_list):
             x, y, sky_photons = _object.xcoord, _object.ycoord, _object.sky_photons
             r = self.max_radius
             img_data = self.image[y - r : y + r, x - r : x + r] - sky_photons
-            # median = np.median(self.image)
-            # std = np.std(self.image)
-            # plt.imshow(
-            #     img_data, origin="lower", vmax=median + 3 * std, vmin=median - 3 * std
-            # )
-            # plt.show()
 
             light_profile = np.take(img_data, r - 1, axis=0)
             half_max = np.max(light_profile) / 2
             n = len(light_profile)
             x = np.linspace(0, n - 1, n)
             spline = UnivariateSpline(x, light_profile - half_max, s=None)
-            # plt.plot(spline(x))
-            # plt.show()
 
             roots = spline.roots()
             idx_max_val = np.argmax(spline(x))
@@ -219,10 +189,6 @@ class Photometry:
             idx_r_1 = np.argmin(tmp)
             tmp[idx_r_1] = 1e10
             idx_r_2 = np.argmin(tmp)
-            # plt.plot(spline(x))
-            # plt.plot(roots[idx_r_2], 0, "bo")
-            # plt.plot(roots[idx_r_1], 0, "bo")
-            # plt.show()
 
             fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
             self.obj_list[idx].psf_radius = 3 * fwhm
