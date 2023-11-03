@@ -101,7 +101,6 @@ class Photometry:
         return background_level
 
     def _create_objects_mask(self, image: np.ndarray) -> np.ndarray:
-        # get a first estimate for the sky
         background_level = self._calc_background_level(image, self.bkg_sigma)
 
         working_mask = np.zeros(image.shape, bool)
@@ -152,11 +151,11 @@ class Photometry:
             new_coords = self._find_closest_object(image)
             if new_coords != None:
                 closest_x, closest_y = new_coords
-                closest_x += x - size
-                closest_y += y - size
+                x += closest_x - size
+                y += closest_y - size
                 image = self.image[
-                    closest_y - size : closest_y + size,
-                    closest_x - size : closest_x + size,
+                    y - size : y + size,
+                    x - size : x + size,
                 ]
 
             new_x, new_y = self._find_coords_max_pixel(image)
@@ -169,60 +168,81 @@ class Photometry:
             self.obj_list[idx] = _object
         return
 
-    def calc_psf_radius(self):
+    def _calc_estimate_sky_photons(self, image, bkg_sigma: float = 4):
+        # This is a first estimate for the number of photons of the sky
+
+        median = np.median(image)
+        std = np.median(np.abs(image - median))
+
+        max_lim, min_lim = median + bkg_sigma * std, median - bkg_sigma * std
+        indexes = np.where((min_lim < image) & (image < max_lim))
+        background_pixels = image[indexes]
+        sky = np.median(background_pixels)
+
+        return sky
+
+    def calculate_star_radius(self):
         """Calculate FWHM of the object."""
 
-        for idx, _object in enumerate(self.obj_list):
-            x, y, sky_photons = _object.xcoord, _object.ycoord, _object.sky_photons
-            r = self.max_radius
-            img_data = self.image[y - r : y + r, x - r : x + r] - sky_photons
+        tmp_list = [obj for obj in self.obj_list if "comparison" in obj.name]
+        if len(tmp_list) == 0:
+            raise ValueError(
+                "There must be at least one comparison star in the list of objects."
+            )
 
-            light_profile = np.take(img_data, r - 1, axis=0)
-            half_max = np.max(light_profile) / 2
-            n = len(light_profile)
-            x = np.linspace(0, n - 1, n)
-            spline = UnivariateSpline(x, light_profile - half_max, s=None)
+        _object = tmp_list[0]
+        x, y = _object.xcoord, _object.ycoord
+        r = self.max_radius
+        img_data = self.image[y - r : y + r, x - r : x + r]
+        sky_photons = self._calc_estimate_sky_photons(img_data)
+        img_data -= sky_photons
 
-            roots = spline.roots()
-            idx_max_val = np.argmax(spline(x))
-            tmp = np.abs(roots - idx_max_val)
-            idx_r_1 = np.argmin(tmp)
-            tmp[idx_r_1] = 1e10
-            idx_r_2 = np.argmin(tmp)
+        light_profile = np.take(img_data, r - 1, axis=0)
+        half_max = np.max(light_profile) / 2
+        n = len(light_profile)
+        x = np.linspace(0, n - 1, n)
+        spline = UnivariateSpline(x, light_profile - half_max, s=None)
 
-            fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
-            self.obj_list[idx].psf_radius = 3 * fwhm
+        roots = spline.roots()
+        idx_max_val = np.argmax(spline(x))
+        tmp = np.abs(roots - idx_max_val)
+        idx_r_1 = np.argmin(tmp)
+        tmp[idx_r_1] = 1e10
+        idx_r_2 = np.argmin(tmp)
+
+        fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
+        self.star_radius = 3 * fwhm
 
         return
 
-    def _create_sky_mask(self, xcoord, ycoord, psf_radius):
+    def _create_sky_mask(self, xcoord, ycoord, star_radius):
         working_mask = np.ones(self.image_shape, bool)
         ym, xm = np.indices(self.image_shape, dtype="float32")
         r = np.sqrt((xm - xcoord) ** 2 + (ym - ycoord) ** 2)
-        mask = (r > 2 * psf_radius) * (r < 3 * psf_radius) * working_mask
+        mask = (r > 2 * star_radius) * (r < 3 * star_radius) * working_mask
         return mask
 
     def calc_sky_photons(self):
         """Calculate the number of photons of the sky"""
         for idx, _object in enumerate(self.obj_list):
             mask = self._create_sky_mask(
-                _object.xcoord, _object.ycoord, _object.psf_radius
+                _object.xcoord, _object.ycoord, self.star_radius
             )
             sky = self.image[np.where(mask)]
             self.obj_list[idx].sky_photons = np.median(sky)
 
-    def _create_psf_mask(self, xcoord, ycoord, psf_radius):
+    def _create_star_mask(self, xcoord, ycoord, star_radius):
         working_mask = np.ones(self.image_shape, bool)
         ym, xm = np.indices(self.image_shape, dtype="float32")
         r = np.sqrt((xm - xcoord) ** 2 + (ym - ycoord) ** 2)
-        mask = (r < psf_radius) * working_mask
+        mask = (r < star_radius) * working_mask
         return mask
 
-    def calc_psf_photons(self):
+    def calc_star_photons(self):
         """Calculate the number of photons of the object."""
         for idx, _object in enumerate(self.obj_list):
-            mask = self._create_psf_mask(
-                _object.xcoord, _object.ycoord, _object.psf_radius
+            mask = self._create_star_mask(
+                _object.xcoord, _object.ycoord, self.star_radius
             )
             star = self.image[np.where(mask)]
             star_photons = np.sum(star - _object.sky_photons)
@@ -251,7 +271,6 @@ class Object:
     mjd: float
     ra: str = 0
     dec: str = 0
-    psf_radius: float = 0
     sky_photons: float = 0
     star_photons: float = 0
     star_err: float = 0

@@ -9,6 +9,7 @@ from photometry import Photometry, Object
 from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 import astropy.units as u
+from scipy.interpolate import UnivariateSpline
 
 
 @pytest.fixture()
@@ -51,17 +52,18 @@ file_path = os.path.join(base_path, "3_e_20230818_5_1_1_1.fits")
 obj_coordinates = os.path.join(base_path, "..", "setup", "objects coordinates.csv")
 max_size = 10
 bkg_sigma = 4
+star_name = "comparison"
 max_radius = max_size // 2
 image, header = fits.getdata(file_path, header=True)
 image *= header["GAIN"]
 image_shape = image.shape
-ra, dec = "19:03:40.2547", "+40:50:26.406"
-xcoord, ycoord = 743, 624
-obj_list = [Object("star shifts", xcoord, ycoord, header["mjd"])]
+ra, dec = "19:03:40.0436", "+40:50:28.191"
+xcoord, ycoord = 736, 624
+obj_list = [Object(star_name, xcoord, ycoord, header["mjd"])]
 
 
-df = pd.read_csv(obj_coordinates)
-coordinates = df.drop(df.columns[[3, 4]], axis=1)
+coordinates = {"name": [star_name], "ra_cam3": [ra], "dec_cam3": [dec]}
+coordinates = pd.DataFrame.from_dict(coordinates)
 
 
 @pytest.fixture()
@@ -72,12 +74,6 @@ def phot():
 def test_convert_world_to_pixel(phot):
     tup = phot._convert_coords_to_pixel(ra, dec)
 
-    wcs = WCS(header)
-    coords_str = f"{ra} {dec}"
-    coord = SkyCoord(coords_str, frame="fk5", unit=(u.hourangle, u.deg))
-    x, y = wcs.world_to_pixel(coord)
-    xcoord = int(x) + 1
-    ycoord = int(y) + 1
     assert (xcoord, ycoord) == tup
 
 
@@ -167,3 +163,106 @@ def test_reset_obj_coords(phot):
     obj = phot.obj_list[0]
     assert obj.xcoord == 744
     assert obj.ycoord == 625
+
+
+def test_calc_estimate_sky_photons(phot):
+    new_sky = phot._calc_estimate_sky_photons(new_image)
+
+    median = np.median(new_image)
+    std = np.median(np.abs(new_image - median))
+
+    max_lim, min_lim = median + bkg_sigma * std, median - bkg_sigma * std
+    indexes = np.where((min_lim < new_image) & (new_image < max_lim))
+    background_pixels = new_image[indexes]
+    sky = np.median(background_pixels)
+
+    assert sky == new_sky
+
+
+def test_calculate_star_radius(phot):
+    phot.calculate_star_radius()
+
+    _object = obj_list[0]
+    x, y = _object.xcoord, _object.ycoord
+    r = max_radius
+    img_data = image[y - r : y + r, x - r : x + r]
+    sky_photons = phot._calculate_sky_photons(img_data)
+    img_data -= sky_photons
+
+    light_profile = np.take(img_data, r - 1, axis=0)
+    half_max = np.max(light_profile) / 2
+    n = len(light_profile)
+    x = np.linspace(0, n - 1, n)
+    spline = UnivariateSpline(x, light_profile - half_max, s=None)
+
+    roots = spline.roots()
+    idx_max_val = np.argmax(spline(x))
+    tmp = np.abs(roots - idx_max_val)
+    idx_r_1 = np.argmin(tmp)
+    tmp[idx_r_1] = 1e10
+    idx_r_2 = np.argmin(tmp)
+
+    fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
+    assert phot.star_radius == 3 * fwhm
+
+
+def test_create_sky_mask(phot):
+    phot.reset_object_coords()
+    phot.calculate_star_radius()
+    obj = phot.obj_list[0]
+    star_radius = phot.star_radius
+    mask = phot._create_sky_mask(obj.xcoord, obj.ycoord, star_radius)
+
+    working_mask = np.ones(image_shape, bool)
+    ym, xm = np.indices(image_shape, dtype="float32")
+    r = np.sqrt((xm - xcoord) ** 2 + (ym - ycoord) ** 2)
+    new_mask = (r > 2 * star_radius) * (r < 3 * star_radius) * working_mask
+
+    assert mask.all() == new_mask.all()
+
+
+def test_calculate_sky_photons(phot):
+    phot.reset_object_coords()
+    obj = phot.obj_list[0]
+    phot.calculate_star_radius()
+    star_radius = phot.star_radius
+    phot.calc_sky_photons()
+
+    mask = phot._create_sky_mask(obj.xcoord, obj.ycoord, star_radius)
+    sky = image[np.where(mask)]
+    sky_photons = np.median(sky)
+
+    assert sky_photons == phot.obj_list[0].sky_photons
+
+
+def test_creat_star_mask(phot):
+    phot.reset_object_coords()
+    phot.calculate_star_radius()
+    star_radius = phot.star_radius
+    obj = phot.obj_list[0]
+    mask = phot._create_star_mask(obj.xcoord, obj.ycoord, star_radius)
+
+    working_mask = np.ones(image_shape, bool)
+    ym, xm = np.indices(image_shape, dtype="float32")
+    r = np.sqrt((xm - xcoord) ** 2 + (ym - ycoord) ** 2)
+    new_mask = (r < star_radius) * working_mask
+
+    assert mask.all() == new_mask.all()
+
+
+def test_calc_star_photons(phot):
+    phot.reset_object_coords()
+    phot.calculate_star_radius()
+    phot.calc_sky_photons()
+    phot.calc_star_photons()
+    obj = phot.obj_list[0]
+    star_radius = phot.star_radius
+    sky_photons = obj.sky_photons
+
+    mask = phot._create_star_mask(obj.xcoord, obj.ycoord, star_radius)
+    star = image[np.where(mask)]
+    star_photons = np.sum(star - sky_photons)
+
+    star_err = np.sqrt(star_photons + sky_photons * star.shape[0])
+
+    assert star_photons == phot.obj_list[0].star_photons

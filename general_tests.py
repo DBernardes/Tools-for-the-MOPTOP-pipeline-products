@@ -17,22 +17,24 @@ base_path = os.path.join(
     "..", "Pol charact MOPTOP", object_type, star_name, experiment, "combined"
 )
 
-# camera = 3
+camera = 3
 # csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates.csv")
 # objects = pd.read_csv(csv_file)
 # objects = objects.loc[objects["name"] == "candidate7"]
-# file = "3_e_20230116_20_15_16_1.fits"
-# file_path = os.path.join(base_path, file)
-# phot = Photometry(file_path, objects)
-# phot.reset_object_coords(4)
-# phot.calc_psf_radius()
-# phot.calc_sky_photons()
-# phot.calc_psf_photons()
-# for obj in phot.obj_list:
-#     print(obj)
+base_path = os.path.join("tests", "images")
+ra, dec = "19:03:40.0436", "+40:50:28.191"
+objects = {"name": [star_name], "ra_cam3": [ra], "dec_cam3": [dec]}
+objects = pd.DataFrame.from_dict(objects)
+file = "3_e_20230818_5_1_1_1.fits"
+file_path = os.path.join(base_path, file)
+phot = Photometry(file_path, objects)
+phot.reset_object_coords()
+
+for obj in phot.obj_list:
+    print(obj)
 
 # -----------------------------------------------------------------
 
 
-ffile_man = FITS_files_manager("./tests/images")
-ffile_man._verify_rotor_positions()
+# ffile_man = FITS_files_manager("./tests/images")
+# ffile_man._verify_rotor_positions()
