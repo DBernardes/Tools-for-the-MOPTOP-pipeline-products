@@ -46,13 +46,19 @@ parameters_MAS_estimator = {
 }
 
 
-def manipulate_csv_file(path: str):
+def manipulate_csv_file(
+    path: str, dest_path: str = "", filename: str = "manipulated_data"
+):
     """Manipulate the raw_data.csv file created by the MOPTOP pipeline
 
     Parameters
     ----------
     path : str
         Path of the folder where the raw_data.csv file is
+    dest_path : str
+        Path of the folder where the raw_data.csv file will be saved
+    filename : str
+        Name of the new .csv file
     """
     df = pd.read_csv(path)
     df = df[df["q_avg"].notna()]
@@ -75,9 +81,11 @@ def manipulate_csv_file(path: str):
         ]:
             df = df.drop(column_name, axis=1)
     df = df.sort_values(by=["wave", "mjd"])
-    base_path = path.split("/")[:-1]
-    new_path = os.path.join(*base_path, "manipulated_data.csv")
-    pd.DataFrame.to_csv(df, new_path, index=False)
+    if dest_path == "":
+        base_path = path.split("/")[:-1]
+        dest_path = os.path.join(*base_path)
+    file_path = os.path.join(dest_path, filename + ".csv")
+    pd.DataFrame.to_csv(df, file_path, index=False)
 
 
 def calculate_polarization_1(path: str) -> dict:

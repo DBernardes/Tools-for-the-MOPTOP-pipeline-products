@@ -9,7 +9,7 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 from tools import manipulate_csv_file
 import os
 
-star_name = "GRB 1163401"
+star_name = "GRB 230818A"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
@@ -23,6 +23,6 @@ base_path = os.path.join(
     star_name,
 )
 
-
+dest_path = os.path.join(base_path, *2 * [".."], "polarization")
 csv_file_name = os.path.join(base_path, "raw_data.csv")
-manipulate_csv_file(csv_file_name)
+manipulate_csv_file(csv_file_name, dest_path, "test")

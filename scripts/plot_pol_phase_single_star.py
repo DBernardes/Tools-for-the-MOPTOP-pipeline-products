@@ -18,7 +18,7 @@ from sys import exit
 import pandas as pd
 
 
-star_name = "GRB 1163401"
+star_name = "GRB 230818A"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
@@ -28,15 +28,14 @@ base_path = os.path.join(
     object_type,
     star_name,
     experiment,
-    "reduced",
-    star_name,
+    "polarization",
 )
 filter = "R"
 fig, axs = plt.subplots(2, 1, figsize=(18, 5), sharex=True)
 axs[0].set_title(f"{star_name}")
 
 
-csv_file_name = os.path.join(base_path, "manipulated_data.csv")
+csv_file_name = os.path.join(base_path, "test.csv")
 df = pd.read_csv(csv_file_name)
 q, u = df["q_avg"], df["u_avg"]
 q_err, u_err = df["q_err"], df["u_err"]
@@ -58,7 +57,7 @@ pol, pol_err, p_mas, p_mas_err, p_min, p_max = novel_pol_error(q, q_err, u, u_er
 
 
 ax = axs[0]
-# ax.errorbar(mjd, pol, pol_err, fmt="bo", alpha=0.5, label="naive estimator")
+ax.errorbar(mjd, pol, pol_err, fmt="bo", alpha=0.5, label="naive estimator")
 ax.errorbar(mjd, p_mas, p_mas_err, fmt="ro", alpha=0.5, label="mas estimator")
 ax.set_ylabel(f"Polarization (%)")
 ax.set_ylim(0, 8)

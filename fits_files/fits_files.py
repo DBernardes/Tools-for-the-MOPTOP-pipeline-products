@@ -157,37 +157,6 @@ class FITS_files_manager:
                         images.append(data)
                     file_name = os.path.join(dest_path, ffile.name)
                     median = np.mean(images, axis=0)
-                    hdr["runnum"] = 0
-                    fits.writeto(file_name, median, hdr, overwrite=True)
-
-    def combine_images_by_rotor_position_1(self, dest_path: str, nruns=None):
-        """Combine a set of images of the same rotor position.
-
-        Parameters
-        ----------
-        dest_path : str
-            destination path
-
-        nruns : int, optional
-            Number of runs to be combined. The default is None.
-
-        use_moptp_name : bool, optional
-            If True, use the MOPTOP name for the images. The default is False.
-        """
-
-        self._verify_rotor_positions()
-        for rpos in np.linspace(1, 16, 16, dtype=int):
-            current_rpos = self.get_images_by_rotor_position(rpos)
-            for ffiles in current_rpos.values():
-                images = []
-                for ffile in ffiles:
-                    file_name = os.path.join(self.dir_path, ffile.name)
-                    data, hdr = fits.getdata(file_name, header=True)
-                    images.append(data)
-
-                    file_name = os.path.join(dest_path, ffile.name)
-                    median = np.mean(images, axis=0)
-                    hdr["runnum"] = 0
                     fits.writeto(file_name, median, hdr, overwrite=True)
 
     @staticmethod
