@@ -10,6 +10,7 @@ from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 import astropy.units as u
 from scipy.interpolate import UnivariateSpline
+from copy import copy
 
 
 @pytest.fixture()
@@ -21,7 +22,6 @@ def obj():
         mjd=300,
         ra="00:00:00",
         dec="00:00:00",
-        psf_radius=5,
         sky_photons=15,
         star_photons=1000,
         star_err=10,
@@ -37,7 +37,6 @@ def test_object_initialization(obj):
     assert obj.mjd == 300
     assert obj.ra == "00:00:00"
     assert obj.dec == "00:00:00"
-    assert obj.psf_radius == 5
     assert obj.sky_photons == 15
     assert obj.star_photons == 1000
     assert obj.star_err == 10
@@ -95,7 +94,7 @@ def test_convert_pixels_to_world(phot):
 
 
 size = max_radius
-new_image = image[ycoord - size : ycoord + size, xcoord - size : xcoord + size]
+new_image = copy(image[ycoord - size : ycoord + size, xcoord - size : xcoord + size])
 
 
 def test_calculate_bkg_level(phot):
@@ -185,8 +184,8 @@ def test_calculate_star_radius(phot):
     _object = obj_list[0]
     x, y = _object.xcoord, _object.ycoord
     r = max_radius
-    img_data = image[y - r : y + r, x - r : x + r]
-    sky_photons = phot._calculate_sky_photons(img_data)
+    img_data = copy(image[y - r : y + r, x - r : x + r])
+    sky_photons = phot._calc_estimate_sky_photons(img_data)
     img_data -= sky_photons
 
     light_profile = np.take(img_data, r - 1, axis=0)
@@ -255,14 +254,17 @@ def test_calc_star_photons(phot):
     phot.calculate_star_radius()
     phot.calc_sky_photons()
     phot.calc_star_photons()
+    star_photons = phot.obj_list[0].star_photons
+
     obj = phot.obj_list[0]
     star_radius = phot.star_radius
     sky_photons = obj.sky_photons
 
     mask = phot._create_star_mask(obj.xcoord, obj.ycoord, star_radius)
     star = image[np.where(mask)]
-    star_photons = np.sum(star - sky_photons)
+    new_star_photons = np.sum(star - sky_photons)
 
     star_err = np.sqrt(star_photons + sky_photons * star.shape[0])
 
-    assert star_photons == phot.obj_list[0].star_photons
+    assert new_star_photons == obj.star_photons
+    assert star_err == obj.star_err

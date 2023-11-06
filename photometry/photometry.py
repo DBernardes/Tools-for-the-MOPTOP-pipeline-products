@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from math import sqrt, log10, log2
 from sbpy.calib import vega_fluxd
 from scipy.constants import h, c
+from copy import copy
 
 
 class Photometry:
@@ -193,7 +194,7 @@ class Photometry:
         _object = tmp_list[0]
         x, y = _object.xcoord, _object.ycoord
         r = self.max_radius
-        img_data = self.image[y - r : y + r, x - r : x + r]
+        img_data = copy(self.image[y - r : y + r, x - r : x + r])
         sky_photons = self._calc_estimate_sky_photons(img_data)
         img_data -= sky_photons
 
