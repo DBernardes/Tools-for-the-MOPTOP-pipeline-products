@@ -25,4 +25,4 @@ base_path = os.path.join(
 
 dest_path = os.path.join(base_path, *2 * [".."], "polarization")
 csv_file_name = os.path.join(base_path, "raw_data.csv")
-manipulate_csv_file(csv_file_name, dest_path, "test")
+manipulate_csv_file(csv_file_name, dest_path, "cand1")

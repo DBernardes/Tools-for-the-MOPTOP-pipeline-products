@@ -182,23 +182,32 @@ class Photometry:
 
         return sky
 
-    def calculate_star_radius(self):
-        """Calculate FWHM of the object."""
+    def calculate_star_radius(self, coeff_radius_fwhm: float = 3) -> float:
+        """Calculate FWHM of the object.
 
-        tmp_list = [obj for obj in self.obj_list if "comparison" in obj.name]
-        if len(tmp_list) == 0:
-            raise ValueError(
-                "There must be at least one comparison star in the list of objects."
-            )
+        Parameters
+        ----------
+        coeff_radius_fwhm: float
+            The multiplicative coefficient between the star radius and the FWHM.
 
-        _object = tmp_list[0]
+        Returns
+        -------
+        star_radius: float
+            The calculated FWHM for the object, times the coefficient_radius_fwhm parameter.
+        """
+
+        _object = [obj for obj in self.obj_list if "candidate1" in obj.name][0]
         x, y = _object.xcoord, _object.ycoord
         r = self.max_radius
         img_data = copy(self.image[y - r : y + r, x - r : x + r])
+        # plt.imshow(img_data, origin="lower")
+        # plt.show()
         sky_photons = self._calc_estimate_sky_photons(img_data)
         img_data -= sky_photons
 
         light_profile = np.take(img_data, r - 1, axis=0)
+        # plt.plot(light_profile)
+        # plt.show()
         half_max = np.max(light_profile) / 2
         n = len(light_profile)
         x = np.linspace(0, n - 1, n)
@@ -211,10 +220,16 @@ class Photometry:
         tmp[idx_r_1] = 1e10
         idx_r_2 = np.argmin(tmp)
 
-        fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
-        self.star_radius = 3 * fwhm
+        # plt.plot(x, spline(x), "b-")
+        # plt.plot(roots[idx_r_2], spline(roots[idx_r_2]), "bo")
+        # plt.plot(roots[idx_r_1], spline(roots[idx_r_1]), "bo")
+        # print(roots)
+        # plt.show()
 
-        return
+        fwhm = np.abs(roots[idx_r_2] - roots[idx_r_1])
+        self.star_radius = coeff_radius_fwhm * fwhm
+
+        return self.star_radius
 
     def _create_sky_mask(self, xcoord, ycoord, star_radius):
         working_mask = np.ones(self.image_shape, bool)
