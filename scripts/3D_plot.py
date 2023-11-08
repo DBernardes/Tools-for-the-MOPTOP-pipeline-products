@@ -12,8 +12,8 @@ import pandas as pd
 from scipy import stats
 from sklearn import linear_model
 
-star_name = "BD+32 3739"
-experiment = "several positions in image/20230830"
+star_name = "HD14069"
+experiment = "several positions in image/20231107"
 camera = 4
 alpha = 0.7
 fontsize = 9
