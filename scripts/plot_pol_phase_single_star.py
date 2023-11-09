@@ -28,14 +28,15 @@ base_path = os.path.join(
     object_type,
     star_name,
     experiment,
-    "polarization",
+    "reduced",
+    star_name,
 )
 filter = "R"
 fig, axs = plt.subplots(2, 1, figsize=(18, 5), sharex=True)
 axs[0].set_title(f"{star_name}")
 
 
-csv_file_name = os.path.join(base_path, "cand1.csv")
+csv_file_name = os.path.join(base_path, "manipulated_data.csv")
 df = pd.read_csv(csv_file_name)
 q, u = df["q_avg"], df["u_avg"]
 q_err, u_err = df["q_err"], df["u_err"]
@@ -43,6 +44,33 @@ x, y = df["x"], df["y"]
 mjd = df["mjd"]
 mjd = (mjd - mjd[0]) * 24 * 60
 
+x, y = np.asarray(4 * [293]), np.asarray(4 * [354])
+q = [
+    -0.003975746114645776,
+    -0.010307143734608415,
+    0.049883777056637324,
+    -0.047914948004209375,
+]
+q_err = [
+    0.02857722031682938,
+    0.03625188893683176,
+    0.03957371741035541,
+    0.08561917413846121,
+]
+u = [
+    -0.0504856679636642,
+    -0.02250086054381925,
+    -0.016296074895976412,
+    0.02333753450152611,
+]
+u_err = [
+    0.028273715933311083,
+    0.03526972896237925,
+    0.04216177275795538,
+    0.08690088468147035,
+]
+q, u, u_err, q_err = np.asarray(q), np.asarray(u), np.asarray(u_err), np.asarray(q_err)
+mjd = mjd[2:10:2]
 
 q_inst = get_instrumental_polarization(x, y, filter, "q")
 u_inst = get_instrumental_polarization(x, y, filter, "u")
@@ -58,9 +86,16 @@ pol, pol_err, p_mas, p_mas_err, p_min, p_max = novel_pol_error(q, q_err, u, u_er
 
 ax = axs[0]
 # ax.errorbar(mjd, pol, pol_err, fmt="bo", alpha=0.5, label="naive estimator")
-ax.errorbar(mjd, p_mas, p_mas_err, fmt="ro", alpha=0.5, label="mas estimator")
+ax.errorbar(
+    mjd,
+    p_mas,
+    p_mas_err,
+    fmt="ro",
+    alpha=0.5,
+    label="mas estimator",
+)
 ax.set_ylabel(f"Polarization (%)")
-ax.set_ylim(0, 8)
+ax.set_ylim(0)
 ax.legend()
 ax = axs[1]
 ax.errorbar(mjd, phase, phase_err, fmt="bo", alpha=0.5)
