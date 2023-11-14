@@ -12,7 +12,7 @@ import pandas as pd
 
 mean_qu_values = {"star": [], "filter": [], "q": [], "std_q": [], "u": [], "std_u": []}
 
-for star in low_polarized_stars.keys():
+for star in ["GD319", "HD14069", "BD+32 3739"]:
     base_path = os.path.join(
         "..",
         "..",

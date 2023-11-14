@@ -12,8 +12,8 @@ import pandas as pd
 from scipy import stats
 from sklearn import linear_model
 
-star_name = "HD14069"
-experiment = "several positions in image/20231107"
+star_name = "BD+32 3739"
+experiment = "several positions in image/20230910"
 camera = 4
 alpha = 0.7
 fontsize = 9
@@ -25,7 +25,7 @@ base_path = os.path.join(
 def prepare_data(new_path, parameter, filter="V"):
     df = pd.read_csv(new_path)
     rows = df.loc[df["wave"] == f"MOP-{filter}"]
-    rows = rows.drop(15)
+    rows = rows.drop(0)
     (x, y, val, val_err) = (
         np.asanyarray(rows["x"]),
         np.asanyarray(rows["y"]),
@@ -82,7 +82,7 @@ def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
 fig = plt.figure(figsize=plt.figaspect(0.5))
 new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, "V")
+    x, y, val, val_err = prepare_data(new_path, parameter, "I")
 
     (
         res,
@@ -92,6 +92,7 @@ for idx, parameter in enumerate(["q", "u"]):
         coor_y,
     ) = calc_spearman(x, y, val)
     ax = fig.add_subplot(1, 2, idx + 1, projection="3d")
+    ax.set_title(f"{parameter} values")
     plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
     X, Y, Z = fit_plane(x, y, val)
     ax.plot_surface(
@@ -103,7 +104,8 @@ for idx, parameter in enumerate(["q", "u"]):
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.legend()
+    # ax.legend()
 
-
+file = os.path.join(base_path, "3D_plot.png")
+plt.savefig(file, dpi=300)
 plt.show()
