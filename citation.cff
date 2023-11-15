@@ -1,0 +1,10 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Bernardes"
+  given-names: "Denis V."
+  orcid: "https://orcid.org/0000-0001-7148-6886"
+title: "Tools for the MOPTOP pipeline products"
+version: 1.0.0
+date-released: 2023-11-15
+url: "https://github.com/DBernardes/Tools-for-the-MOPTOP-pipeline-products"
