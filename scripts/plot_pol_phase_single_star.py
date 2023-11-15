@@ -18,18 +18,18 @@ from sys import exit
 import pandas as pd
 
 
-star_name = "GRB 1107466"
+star_name = "GRB 230818A"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
-    "..", "..", "Pol charact MOPTOP", object_type, star_name, experiment, "polarimetry"
+    "..", "..", "Pol charact MOPTOP", object_type, star_name, experiment
 )
 filter = "R"
 fig, axs = plt.subplots(2, 1, figsize=(18, 5), sharex=True)
-axs[0].set_title(f"{star_name}")
+# axs[0].set_title(f"{star_name}")
 
 
-csv_file_name = os.path.join(base_path, "moptop_pipeline_cand2.csv")
+csv_file_name = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 df = pd.read_csv(csv_file_name)
 q, u = df["q_avg"], df["u_avg"]
 q_err, u_err = df["q_err"], df["u_err"]
@@ -62,7 +62,7 @@ ax.errorbar(
 )
 ax.set_ylabel(f"Polarization (%)")
 ax.set_ylim(0)
-ax.legend()
+# ax.legend()
 ax = axs[1]
 ax.errorbar(mjd, phase, phase_err, fmt="bo", alpha=0.5)
 ax.set_ylabel("Phase (deg)")

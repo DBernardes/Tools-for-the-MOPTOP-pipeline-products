@@ -43,7 +43,8 @@ def plot_data(ax, x, y, val):
     cmap = colormaps["Blues"]
     levels = np.linspace(median - 3 * std, median + 5 * std, 15)
     triang = tri.Triangulation(x, y)
-    tcf = ax.tricontourf(triang, val, alpha=1, levels=levels, cmap=cmap)
+    ax.tricontour(triang, val, colors="k", levels=levels, linestyles="solid", alpha=0.5)
+    tcf = ax.tricontourf(triang, val, levels=levels, cmap=cmap)
     fig.colorbar(tcf)
 
     return
