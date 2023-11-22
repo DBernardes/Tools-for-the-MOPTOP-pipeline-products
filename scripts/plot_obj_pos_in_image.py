@@ -11,7 +11,7 @@ from tools import track_obj_over_images
 import matplotlib.patches as patches
 
 star_name = "HD14069"
-experiment = "several positions in image/20231107"
+experiment = "several positions in image/20231117"
 src_path = os.path.join(
     "..",
     "..",

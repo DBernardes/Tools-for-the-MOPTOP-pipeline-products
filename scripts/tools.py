@@ -661,3 +661,7 @@ def novel_pol_error_1(
         p_min,
         p_max,
     )
+
+
+def rewrite_header_keyword(file: str, keyword: str, value: [str, int, float]):
+    return

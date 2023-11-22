@@ -15,27 +15,26 @@ star_name = "GRB 230818A"
 experiment = "first set"
 object_type = "Scientific objects"
 base_path = os.path.join(
-    "..", "Pol charact MOPTOP", object_type, star_name, experiment, star_name
+    "..", "Pol charact MOPTOP", object_type, star_name, experiment, "reduced", star_name
 )
+# camera = 3
+# csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates copy.csv")
+# objects = pd.read_csv(csv_file)
+# objects = objects.loc[objects["name"] == "candidate1"]
+# objects = objects.loc[:, ["name", f"ra_cam{camera}", f"dec_cam{camera}"]]
+# objects = pd.DataFrame.from_dict(objects)
+# file = f"4_e_20230818_5_10_16_1.fits"
+# file_path = os.path.join(base_path, file)
+# phot = Photometry(file_path, objects)
+# phot.reset_object_coords()
+# # phot.calculate_star_radius(coeff_radius_fwhm=2)
+# phot.star_radius = 4.16
+# phot.calc_sky_photons()
+# phot.calc_star_photons()
 
-camera = 3
-csv_file = os.path.join(base_path, "..", "setup", f"objects coordinates copy.csv")
-objects = pd.read_csv(csv_file)
-objects = objects.loc[objects["name"] == "candidate1"]
-objects = objects.loc[:, ["name", f"ra_cam{camera}", f"dec_cam{camera}"]]
-objects = pd.DataFrame.from_dict(objects)
-file = f"4_e_20230818_5_10_16_1.fits"
-file_path = os.path.join(base_path, file)
-phot = Photometry(file_path, objects)
-phot.reset_object_coords()
-# phot.calculate_star_radius(coeff_radius_fwhm=2)
-phot.star_radius = 4.16
-phot.calc_sky_photons()
-phot.calc_star_photons()
-
-for obj in phot.obj_list:
-    print(obj)
-    print(phot.star_radius)
+# for obj in phot.obj_list:
+#     print(obj)
+#     print(phot.star_radius)
 
 # -----------------------------------------------------------------
 

@@ -12,13 +12,15 @@ import pandas as pd
 from scipy import stats
 from sklearn import linear_model
 
-star_name = "BD+32 3739"
-experiment = "several positions in image/20230910"
-camera = 4
-alpha = 0.7
-fontsize = 9
+star_name = "HD14069"
+experiment = "several positions in image/20231117"
 base_path = os.path.join(
-    "..", "..", "Pol charact MOPTOP", "Low polarized stars", star_name, experiment
+    "..",
+    "..",
+    "Pol charact MOPTOP",
+    "Low polarized stars",
+    star_name,
+    experiment,
 )
 
 
@@ -44,7 +46,6 @@ def fit_plane(x, y, z):
     a, b = reg.coef_
     c = reg.intercept_
     X, Y = np.meshgrid(x, y)
-    print(a, b, c)
     Z = a * X + b * Y + c
     return X, Y, Z
 
@@ -82,7 +83,7 @@ def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
 fig = plt.figure(figsize=plt.figaspect(0.5))
 new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, "I")
+    x, y, val, val_err = prepare_data(new_path, parameter, "L")
 
     (
         res,
