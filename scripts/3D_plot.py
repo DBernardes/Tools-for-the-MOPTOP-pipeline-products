@@ -6,14 +6,15 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 import os
 import matplotlib.pyplot as plt
-from tools import get_coords_in_series
+from tools import get_coords_in_series, calculate_qu_low_standards
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn import linear_model
 
+filter = "L"
 star_name = "HD14069"
-experiment = "several positions in image/20231117"
+experiment = "several positions in image/20231117/"
 base_path = os.path.join(
     "..",
     "..",
@@ -24,10 +25,18 @@ base_path = os.path.join(
 )
 
 
-def prepare_data(new_path, parameter, filter="V"):
+def prepare_data(new_path, parameter, filter, star_name):
+    lit_param = calculate_qu_low_standards(star_name, filter)
+    if parameter == "q":
+        lit_param = lit_param[0]
+    elif parameter == "u":
+        lit_param = lit_param[1]
+    else:
+        raise ValueError
+
     df = pd.read_csv(new_path)
     rows = df.loc[df["wave"] == f"MOP-{filter}"]
-    rows = rows.drop(0)
+    rows = rows[1:]
     (x, y, val, val_err) = (
         np.asanyarray(rows["x"]),
         np.asanyarray(rows["y"]),
@@ -35,7 +44,7 @@ def prepare_data(new_path, parameter, filter="V"):
         np.asanyarray(rows[f"{parameter}_err"]),
     )
 
-    return x, y, val, val_err
+    return x, y, val - lit_param, val_err
 
 
 def fit_plane(x, y, z):
@@ -83,7 +92,7 @@ def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
 fig = plt.figure(figsize=plt.figaspect(0.5))
 new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, "L")
+    x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
 
     (
         res,

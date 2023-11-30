@@ -10,7 +10,7 @@ from tools import manipulate_csv_file
 import os
 
 star_name = "HD14069"
-experiment = "several positions in image/20231115"
+experiment = "several positions in image/20231117/"
 src_path = os.path.join(
     "..",
     "..",

@@ -18,15 +18,10 @@ from numpy import ndarray
 
 import matplotlib.pyplot as plt
 
-
+# (pol-%, phase-deg)
 low_polarized_stars = {
-    "GD319": 0.045,
-    "HD14069": 0.111,
-    "BD+32 3739": 0.039,
-    "HD212311": 0.028,
-    "BD+28 4211": 0.063,
-    "G191B2B": 0.090,
-    "BD+33 2642": 0.145,
+    "HD14069": {"B": (0.111, 93.62), "V": (0.022, 156.57)},
+    "BD+32 3739": {"B": (0.039, 79.38), "V": (0.025, 35.79)},
 }
 # https://www.not.iac.es/instruments/turpol/std/zpstd.html
 high_polarized_stars = {
@@ -605,63 +600,11 @@ def novel_pol_error(
     )
 
 
-def novel_pol_error_1(
-    q: ndarray, q_err: ndarray, u: ndarray, u_err: ndarray
-) -> tuple[ndarray]:
-    """Calculate the novel polarization
-
-    Parameters
-    ----------
-    q : ndarray
-        q Stokes parameter
-    q_err : ndarray
-        q error
-    u : ndarray
-        u Stokes parameter
-    u_err : ndarray
-        u error
-
-    Returns
-    -------
-    tuple[ndarray]
-        The values of the naive, modified, minimum, and maximum polarizations, and standard deviations.
-    """
-    pol = np.sqrt(q**2 + u**2)
-    pol_err = np.sqrt((q_err**2 + u_err**2) / 2)
-
-    b_sq = (q**2 * u_err**2 + u**2 * q_err**2) / (q**2 + u**2)  # eq30
-    p_mas = pol - (b_sq / (2.0 * pol)) * (1.0 - np.exp(-(pol**2) / b_sq))  # eq37
-
-    p_mas_err = np.sqrt((u**2 * u_err**2 + q**2 * q_err**2) / (q**2 + u**2))
-
-    P_alpha = 1.0
-    beta = 0.97
-    gamma = 2.01
-    p_max_over_sigma = p_mas / pol_err + P_alpha * (
-        1.0 - beta * np.exp(-gamma * p_mas / pol_err)
-    )
-
-    p_max = p_max_over_sigma * pol_err
-    beta = 0.72
-    gamma = 0.60
-    omega = -0.83
-    phi = 4.41
-    p_min = p_mas - pol_err * P_alpha * (
-        1.0
-        + beta
-        * np.exp(-gamma * p_mas / pol_err)
-        * np.sin(omega * p_mas / pol_err + phi)
-    )
-
-    return (
-        pol,
-        pol_err,
-        p_mas,
-        p_mas_err,
-        p_min,
-        p_max,
-    )
-
-
-def rewrite_header_keyword(file: str, keyword: str, value: [str, int, float]):
-    return
+def calculate_qu_low_standards(star: str, filter: str):
+    if filter in ["R", "I", "L"]:
+        filter = "V"
+    pol, phase = low_polarized_stars[star][filter]
+    pol, phase = pol / 100, np.deg2rad(phase)
+    q = pol / np.sqrt(1 + np.tan(2 * phase) ** 2)
+    u = np.sqrt(pol**2 - q**2)
+    return (q, u)

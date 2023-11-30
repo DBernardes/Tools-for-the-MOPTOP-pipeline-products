@@ -21,6 +21,8 @@ from copy import copy
 class Photometry:
     """Photometry class"""
 
+    READ_NOISE = 0.8
+
     def __init__(self, fits_file: str, objects: DataFrame, max_size: int = 15) -> None:
         """Initialize the class
 
@@ -36,7 +38,7 @@ class Photometry:
         self.fits_file = fits_file
         self.max_radius = max_size // 2
         self.image, self.header = fits.getdata(fits_file, header=True)
-        self.image *= self.header["GAIN"]  # ? is this right
+        self.image *= self.header["GAIN"]
         self.image_shape = self.image.shape
         self.obj_list = []
         for _object in objects.itertuples(name=None, index=False):
@@ -266,8 +268,10 @@ class Photometry:
                 star_photons = 0
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
-                star_photons + _object.sky_photons * star.shape[0]
-            )  # TODO: add the read noise error
+                star_photons
+                + _object.sky_photons * star.shape[0]
+                + self.READ_NOISE**2
+            )
         return
 
     def calc_magnitude(self):
