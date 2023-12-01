@@ -12,16 +12,10 @@ import pandas as pd
 from scipy import stats
 from sklearn import linear_model
 
-filter = "L"
 star_name = "HD14069"
 experiment = "several positions in image/20231117/"
 base_path = os.path.join(
-    "..",
-    "..",
-    "Pol charact MOPTOP",
-    "Low polarized stars",
-    star_name,
-    experiment,
+    "..", "..", "Pol charact MOPTOP", "Low polarized stars", "csv contour plot"
 )
 
 
@@ -73,10 +67,12 @@ def calc_spearman(x, y, val):
     )
 
 
-def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter):
-    color = "b"
-    if parameter == "u":
-        color = "r"
+def plot_data(ax, x, y, val, val_err, parameter, filter):
+    color = "r"
+    if parameter == "q":
+        color = "b"
+        ax.set_title(f"Filter {filter}")
+
     ax.errorbar(
         x,
         y,
@@ -85,36 +81,32 @@ def plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
         color=color,
         marker="o",
         alpha=0.5,
-        label=f"{parameter}, corr:({coor_x:.3f},{coor_y:.3f}), pval:({pval_x:.2e},{pval_y:.2e})",
+        # label=f"{parameter}, corr:({coor_x:.3f},{coor_y:.3f}), pval:({pval_x:.2e},{pval_y:.2e})",
     )
+    ax.set_xlim(0, 1024)
+    ax.set_ylim(0, 1024)
+    ax.set_xlabel("X (pix)")
+    ax.set_ylabel("Y (pix)")
+    ax.set_zlabel(f"\n{parameter} values")
+    ax.invert_yaxis()
 
 
-fig = plt.figure(figsize=plt.figaspect(0.5))
-new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
-for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
+fig = plt.figure()
+for idx2, parameter in enumerate(["q", "u"]):
+    for idx, filter in enumerate(["V", "R", "I"]):
+        new_path = os.path.join(base_path, f"filter {filter}.csv")
+        x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
 
-    (
-        res,
-        pval_x,
-        pval_y,
-        coor_x,
-        coor_y,
-    ) = calc_spearman(x, y, val)
-    ax = fig.add_subplot(1, 2, idx + 1, projection="3d")
-    ax.set_title(f"{parameter} values")
-    plot_data(ax, x, y, val, val_err, coor_x, coor_y, pval_x, pval_y, parameter)
-    X, Y, Z = fit_plane(x, y, val)
-    ax.plot_surface(
-        X,
-        Y,
-        Z,
-        color=["b", "r"][idx],
-        alpha=0.1,
-    )
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    # ax.legend()
+        ax = fig.add_subplot(2, 3, idx2 * 3 + idx + 1, projection="3d")
+        plot_data(ax, x, y, val, val_err, parameter, filter)
+        X, Y, Z = fit_plane(x, y, val)
+        ax.plot_surface(
+            X,
+            Y,
+            Z,
+            color=["b", "r"][idx2],
+            alpha=0.1,
+        )
 
 file = os.path.join(base_path, "3D_plot.png")
 plt.savefig(file, dpi=300)
