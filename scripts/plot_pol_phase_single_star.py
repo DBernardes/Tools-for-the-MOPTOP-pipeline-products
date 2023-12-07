@@ -34,9 +34,30 @@ base_path = os.path.join(
 filter = "R"
 fig, axs = plt.subplots(2, 1, figsize=(6, 5), sharex=True)
 
-csv_files = [file for file in os.listdir(base_path) if "cand" in file]
+markers = [
+    "o",
+    "s",
+    "p",
+    "*",
+    "+",
+    "X",
+    "D",
+    "v",
+    "<",
+    ">",
+    "^",
+    "8",
+]
 
-for file in csv_files:
+for idx, cand_num in enumerate([1, 2, 3, 4, 7, 8]):
+    file = f"cand{cand_num}.csv"
+    marker = f"{markers[idx]}b"
+    lab = file.split(".")[0]
+
+    if "cand1" in file:
+        marker = f"or"
+        lab = "target"
+
     csv_file_name = os.path.join(base_path, file)
     df = pd.read_csv(csv_file_name)
     q, u = df["q_avg"], df["u_avg"]
@@ -59,15 +80,31 @@ for file in csv_files:
     pol, pol_err, p_mas, p_mas_err, p_min, p_max = novel_pol_error(q, q_err, u, u_err)
 
     ax = axs[0]
-    ax.errorbar(mjd, p_mas, p_mas_err, fmt="o", alpha=0.5, label=file.split(".")[0])
+    ax.errorbar(
+        mjd,
+        p_mas,
+        p_mas_err,
+        fmt=marker,
+        alpha=0.5,
+        label=lab,
+    )
     ax.set_ylabel(f"Polarization (%)")
-    ax.set_ylim(0)
+    ax.set_ylim(0, 30)
     ax.legend()
     ax = axs[1]
-    ax.errorbar(mjd, phase, phase_err, fmt="o", alpha=0.5, label=file.split(".")[0])
+    ax.errorbar(
+        mjd,
+        phase,
+        phase_err,
+        fmt=marker,
+        alpha=0.5,
+        label=lab,
+    )
     ax.set_ylabel("Phase (deg)")
     ax.set_xlabel("Time (min)")
     ax.legend()
+    ax.set_ylim(-150, 150)
+
 
 # -------------------------------------------------------------------------------------------
 

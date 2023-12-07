@@ -21,7 +21,8 @@ from copy import copy
 class Photometry:
     """Photometry class"""
 
-    READ_NOISE = 0.8
+    READ_NOISE = 0.8  # e-
+    DARK_CURRENT = 0.3  # e-/pix/s
 
     def __init__(self, fits_file: str, objects: DataFrame, max_size: int = 15) -> None:
         """Initialize the class
@@ -258,6 +259,7 @@ class Photometry:
 
     def calc_star_photons(self):
         """Calculate the number of photons of the object."""
+        t_exp = self.header["EXPTIME"]
         for idx, _object in enumerate(self.obj_list):
             mask = self._create_star_mask(
                 _object.xcoord, _object.ycoord, self.star_radius
@@ -269,8 +271,12 @@ class Photometry:
             self.obj_list[idx].star_photons = star_photons
             self.obj_list[idx].star_err = np.sqrt(
                 star_photons
-                + _object.sky_photons * star.shape[0]
-                + self.READ_NOISE**2
+                + star.shape[0]
+                * (
+                    _object.sky_photons
+                    + t_exp * self.DARK_CURRENT
+                    + self.READ_NOISE**2
+                )
             )
         return
 
