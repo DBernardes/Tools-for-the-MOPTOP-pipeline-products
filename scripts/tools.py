@@ -538,6 +538,7 @@ def get_instrumental_polarization(
         q or u instrumental polarization values
     """
     csv_path = os.path.join(
+        "scripts",
         "csv",
         "plane_coefficients.csv",
     )
