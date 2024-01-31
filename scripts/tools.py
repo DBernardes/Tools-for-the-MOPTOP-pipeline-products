@@ -7,21 +7,22 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 
 import os
-import pandas as pd
-import numpy as np
-import astropy.io.fits as fits
 import shutil
-from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord
-import astropy.units as u
-from numpy import ndarray
 
+import astropy.io.fits as fits
+import astropy.units as u
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from astropy.coordinates import SkyCoord
+from astropy.wcs import WCS
+from numpy import ndarray
 
 # (pol-%, phase-deg)
 low_polarized_stars = {
     "HD14069": {"B": (0.111, 93.62), "V": (0.022, 156.57)},
     "BD+32 3739": {"B": (0.039, 79.38), "V": (0.025, 35.79)},
+    "GD319": {"B": (0.045, 142.79), "V": (0.089, 140.15)},
 }
 # https://www.not.iac.es/instruments/turpol/std/zpstd.html
 high_polarized_stars = {
@@ -71,8 +72,8 @@ def manipulate_csv_file(
             "s1_src_cam2",
             "s1_src_cam2_err",
             "time",
-            "x",
-            "y",
+            "x_pix",
+            "y_pix",
         ]:
             df = df.drop(column_name, axis=1)
     df = df.sort_values(by=["wave", "mjd"])

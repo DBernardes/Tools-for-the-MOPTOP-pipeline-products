@@ -5,24 +5,18 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 
 import os
+
 import matplotlib.pyplot as plt
-from tools import get_coords_in_series, calculate_qu_low_standards
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn import linear_model
+from tools import calculate_qu_low_standards, get_coords_in_series
 
-star_name = "BD+32 3739"
-filter = "V"
-experiment = "several positions in image/20230830"
-base_path = os.path.join(
-    "..",
-    "..",
-    "Pol charact MOPTOP",
-    "Low polarized stars",
-    star_name,
-    experiment,
-)
+star_name = "GD319"
+filter = "B"
+obs_date = "20240130"
+base_path = os.path.join("..", "..", "zpol stars", obs_date)
 
 
 def prepare_data(new_path, parameter, filter, star_name):
@@ -35,10 +29,10 @@ def prepare_data(new_path, parameter, filter, star_name):
         raise ValueError
 
     df = pd.read_csv(new_path)
-    rows = df.loc[df["wave"] == f"MOP-{filter}"][:-1]
+    rows = df.loc[df["wave"] == f"{filter}"][:-1]
     (x, y, val, val_err) = (
-        np.asanyarray(rows["x"]),
-        np.asanyarray(rows["y"]),
+        np.asanyarray(rows["x_pix"]),
+        np.asanyarray(rows["y_pix"]),
         np.asanyarray(rows[f"{parameter}_avg"]),
         np.asanyarray(rows[f"{parameter}_err"]),
     )
@@ -58,8 +52,8 @@ def fit_plane(x, y, z):
     return a, b, c
 
 
-new_path = os.path.join(base_path, "reduced", star_name, "manipulated_data.csv")
+new_path = os.path.join(base_path, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
     x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
     a, b, c = fit_plane(x, y, val)
-    print(a, b, c, sep=",")
+    print(a, b, c, sep="\n")

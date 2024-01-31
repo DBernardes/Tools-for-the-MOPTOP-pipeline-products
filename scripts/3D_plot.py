@@ -5,18 +5,16 @@ __copyright__ = "Copyright 2023, Liverpool John Moores University"
 
 
 import os
+
 import matplotlib.pyplot as plt
-from tools import get_coords_in_series, calculate_qu_low_standards
 import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn import linear_model
+from tools import calculate_qu_low_standards, get_coords_in_series
 
-star_name = "HD14069"
-experiment = "several positions in image/20231117/"
-base_path = os.path.join(
-    "..", "..", "Pol charact MOPTOP", "Low polarized stars", "csv contour plot"
-)
+star_name = "BD+32 3739"
+base_path = os.path.join("..", "..", "zpol stars", "characterizations")
 
 
 def prepare_data(new_path, parameter, filter, star_name):
@@ -29,11 +27,11 @@ def prepare_data(new_path, parameter, filter, star_name):
         raise ValueError
 
     df = pd.read_csv(new_path)
-    rows = df.loc[df["wave"] == f"MOP-{filter}"]
+    rows = df.loc[df["wave"] == f"{filter}"]
     rows = rows[1:]
     (x, y, val, val_err) = (
-        np.asanyarray(rows["x"]),
-        np.asanyarray(rows["y"]),
+        np.asanyarray(rows["x_pix"]),
+        np.asanyarray(rows["y_pix"]),
         np.asanyarray(rows[f"{parameter}_avg"]),
         np.asanyarray(rows[f"{parameter}_err"]),
     )
@@ -87,17 +85,19 @@ def plot_data(ax, x, y, val, val_err, parameter, filter):
     ax.set_ylim(0, 1024)
     ax.set_xlabel("X (pix)")
     ax.set_ylabel("Y (pix)")
-    ax.set_zlabel(f"\n{parameter} values")
+    # ax.set_zlabel(f"\n{parameter} values")
     ax.invert_yaxis()
 
 
 fig = plt.figure()
 for idx2, parameter in enumerate(["q", "u"]):
-    for idx, filter in enumerate(["V", "R", "I"]):
+    for idx, filter in enumerate(["B", "V", "R", "L"]):
+        if filter in ["B", "L"]:
+            star_name = "GD319"
         new_path = os.path.join(base_path, f"filter {filter}.csv")
         x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
 
-        ax = fig.add_subplot(2, 3, idx2 * 3 + idx + 1, projection="3d")
+        ax = fig.add_subplot(2, 4, idx2 * 4 + idx + 1, projection="3d")
         plot_data(ax, x, y, val, val_err, parameter, filter)
         X, Y, Z = fit_plane(x, y, val)
         ax.plot_surface(
