@@ -57,13 +57,13 @@ def plot_data(ax, x, y, val):
     return
 
 
-fig, axs = plt.subplots(4, 2, figsize=(12, 8), sharey="row", sharex="col")
+fig, axs = plt.subplots(5, 2, figsize=(12, 8), sharey="row", sharex="col")
 axs[0, 0].set_title("q values")
 axs[0, 1].set_title("u values")
-axs[3, 1].set_xlabel("X axis (pixels)")
-axs[3, 0].set_xlabel("X axis (pixels)")
+axs[4, 1].set_xlabel("X axis (pixels)")
+axs[4, 0].set_xlabel("X axis (pixels)")
 
-for idx, filter in enumerate(["B", "V", "R", "L"]):
+for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
     for idx2, parameter in enumerate(["q", "u"]):
         ax = axs[idx, idx2]
         new_path = os.path.join(base_path, f"filter {filter}.csv")

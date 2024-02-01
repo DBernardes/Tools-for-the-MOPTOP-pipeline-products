@@ -91,13 +91,13 @@ def plot_data(ax, x, y, val, val_err, parameter, filter):
 
 fig = plt.figure()
 for idx2, parameter in enumerate(["q", "u"]):
-    for idx, filter in enumerate(["B", "V", "R", "L"]):
+    for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
         if filter in ["B", "L"]:
             star_name = "GD319"
         new_path = os.path.join(base_path, f"filter {filter}.csv")
         x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
 
-        ax = fig.add_subplot(2, 4, idx2 * 4 + idx + 1, projection="3d")
+        ax = fig.add_subplot(2, 5, idx2 * 5 + idx + 1, projection="3d")
         plot_data(ax, x, y, val, val_err, parameter, filter)
         X, Y, Z = fit_plane(x, y, val)
         ax.plot_surface(

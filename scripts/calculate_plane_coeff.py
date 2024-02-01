@@ -14,8 +14,9 @@ from sklearn import linear_model
 from tools import calculate_qu_low_standards, get_coords_in_series
 
 star_name = "GD319"
-filter = "B"
-obs_date = "20240130"
+star_name = "BD+32 3739"
+filter = "R"
+obs_date = "20230909"
 base_path = os.path.join("..", "..", "zpol stars", obs_date)
 
 
@@ -56,4 +57,4 @@ new_path = os.path.join(base_path, "manipulated_data.csv")
 for idx, parameter in enumerate(["q", "u"]):
     x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
     a, b, c = fit_plane(x, y, val)
-    print(a, b, c, sep="\n")
+    print(a, b, c, sep=",")
