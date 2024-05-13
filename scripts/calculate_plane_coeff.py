@@ -13,11 +13,7 @@ from scipy import stats
 from sklearn import linear_model
 from tools import calculate_qu_low_standards, get_coords_in_series
 
-star_name = "GD319"
-star_name = "BD+32 3739"
-filter = "R"
-obs_date = "20230909"
-base_path = os.path.join("..", "..", "zpol stars", obs_date)
+base_path = os.path.join("..", "..", "zpol stars", "characterizations")
 
 
 def prepare_data(new_path, parameter, filter, star_name):
@@ -30,7 +26,8 @@ def prepare_data(new_path, parameter, filter, star_name):
         raise ValueError
 
     df = pd.read_csv(new_path)
-    rows = df.loc[df["wave"] == f"{filter}"][:-1]
+    rows = df.loc[df["wave"] == f"{filter}"]
+    rows = rows[1:]
     (x, y, val, val_err) = (
         np.asanyarray(rows["x_pix"]),
         np.asanyarray(rows["y_pix"]),
@@ -38,7 +35,7 @@ def prepare_data(new_path, parameter, filter, star_name):
         np.asanyarray(rows[f"{parameter}_err"]),
     )
 
-    return x, y, val, val_err
+    return x, y, val - lit_param, val_err
 
 
 def fit_plane(x, y, z):
@@ -53,8 +50,14 @@ def fit_plane(x, y, z):
     return a, b, c
 
 
-new_path = os.path.join(base_path, "manipulated_data.csv")
-for idx, parameter in enumerate(["q", "u"]):
-    x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
-    a, b, c = fit_plane(x, y, val)
-    print(a, b, c, sep=",")
+for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
+    if filter in ["B", "L"]:
+        star_name = "GD319"
+    else:
+        star_name = "BD+32 3739"
+    print(filter)
+    for idx2, parameter in enumerate(["q", "u"]):
+        new_path = os.path.join(base_path, f"filter {filter}.csv")
+        x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
+        a, b, c = fit_plane(x, y, val)
+        print(a, b, c, sep=",")

@@ -11,7 +11,8 @@ import os
 from tools import manipulate_csv_file
 
 star_name = "BD+32 3739"
-obs_date = "20230910"
+star_name = "GD319"
+obs_date = "20240129"
 src_path = os.path.join("..", "..", "zpol stars", obs_date, star_name)
 csv_file = os.path.join(src_path, "reduced_data.csv")
 manipulate_csv_file(csv_file, os.path.join(src_path, ".."))

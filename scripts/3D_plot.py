@@ -17,6 +17,42 @@ star_name = "BD+32 3739"
 base_path = os.path.join("..", "..", "zpol stars", "characterizations")
 
 
+def test_plane_coefs(ax, parameter, filter):
+    csv_path = os.path.join("csv", "plane_coefficients.csv")
+    df = pd.read_csv(csv_path)
+    df = df.loc[df["filter"] == filter]
+    X = np.linspace(0, 1024, 10)
+    Y = np.linspace(0, 1024, 10)
+    Z = (
+        df[parameter + "a"].values * X
+        + df[parameter + "b"].values * Y
+        + df[parameter + "c"].values
+    )
+    ax.plot(
+        X,
+        Y,
+        Z,
+        color="k",
+        marker="o",
+        alpha=0.5,
+    )
+    Y = np.linspace(1024, 0, 10)
+    Z = (
+        df[parameter + "a"].values * X
+        + df[parameter + "b"].values * Y
+        + df[parameter + "c"].values
+    )
+    ax.plot(
+        X,
+        Y,
+        Z,
+        color="k",
+        marker="o",
+        alpha=0.5,
+    )
+    return
+
+
 def prepare_data(new_path, parameter, filter, star_name):
     lit_param = calculate_qu_low_standards(star_name, filter)
     if parameter == "q":
@@ -48,7 +84,7 @@ def fit_plane(x, y, z):
     c = reg.intercept_
     X, Y = np.meshgrid(x, y)
     Z = a * X + b * Y + c
-    return X, Y, Z
+    return X, Y, Z, a, b, c
 
 
 def calc_spearman(x, y, val):
@@ -94,12 +130,15 @@ for idx2, parameter in enumerate(["q", "u"]):
     for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
         if filter in ["B", "L"]:
             star_name = "GD319"
+        else:
+            star_name = "BD+32 3739"
         new_path = os.path.join(base_path, f"filter {filter}.csv")
         x, y, val, val_err = prepare_data(new_path, parameter, filter, star_name)
 
         ax = fig.add_subplot(2, 5, idx2 * 5 + idx + 1, projection="3d")
         plot_data(ax, x, y, val, val_err, parameter, filter)
-        X, Y, Z = fit_plane(x, y, val)
+        # test_plane_coefs(ax, parameter, filter)
+        X, Y, Z, a, b, c = fit_plane(x, y, val)
         ax.plot_surface(
             X,
             Y,
@@ -107,7 +146,16 @@ for idx2, parameter in enumerate(["q", "u"]):
             color=["b", "r"][idx2],
             alpha=0.1,
         )
+        if parameter == "q":
+            plt.title(
+                f"Filter {filter}\n\nA={a:9.2e}\nB={b:9.2e}\nC={c:9.2e}", fontsize=10
+            )
+        else:
+            plt.title(f"A={a:9.2e}\nB={b:9.2e}\nC={c:9.2e}", fontsize=10)
+        if idx == 0:
+            ax.zaxis.set_rotate_label(False)
+            ax.set_zlabel(f"{parameter} values", rotation=90)
 
 file = os.path.join(base_path, "3D_plot.png")
-plt.savefig(file, dpi=300)
+# plt.savefig(file, dpi=300)
 plt.show()

@@ -8,6 +8,7 @@ import os
 
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import matplotlib.tri as tri
 import numpy as np
 import pandas as pd
@@ -18,6 +19,10 @@ alpha = 0.7
 fontsize = 9
 star_name = "GD319"
 base_path = os.path.join("..", "..", "zpol stars", "characterizations")
+
+
+def fmt(x, pos):
+    return f"{x:.1e}"
 
 
 def prepare_data(new_path, parameter, filter, star_name):
@@ -51,8 +56,9 @@ def plot_data(ax, x, y, val):
     levels = np.linspace(median - 4 * std, median + 4 * std, 15)
     triang = tri.Triangulation(x, y)
     # ax.tricontour(triang, val, colors="k", levels=levels, linestyles="solid", alpha=0.5)
+
     tcf = ax.tricontourf(triang, val, levels=levels, cmap=cmap)
-    fig.colorbar(tcf)
+    fig.colorbar(tcf, format=ticker.FuncFormatter(fmt))
 
     return
 
@@ -70,7 +76,7 @@ for idx, filter in enumerate(["B", "V", "R", "I", "L"]):
         x, y, val = prepare_data(new_path, parameter, filter, star_name)
         plot_data(ax, x, y, val)
         if parameter == "q":
-            ax.set_ylabel(f"Y axis (pixels)\n{filter} Filter")
+            ax.set_ylabel(f"Y axis (pixels)\nFilter {filter}")
 
 file = os.path.join(base_path, "contour_plot.png")
 plt.savefig(file, dpi=300)
