@@ -237,8 +237,8 @@ def select_images_keyword_interval(
     path: str,
     dest_path: str,
     keyword: str,
-    min: float = -np.infty,
-    max: float = np.infty,
+    min: float = -np.inf,
+    max: float = np.inf,
     tag: str = ".fits",
 ) -> None:
     """Select images based on an interval of allowed values for a keyword
